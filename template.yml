@@ -1,75 +1,88 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Resources:
 
-  StunningDiscoAPI:
+Parameters:
+  domainName:
+    Type: String
+  restApiName:
+    Type: String
+  trustStoreUri:
+    Type: String
+  apiHostCert:
+    Type: String
+  s3Credential:
+    Type: String
+  rootEndpointUri:
+    Type: String
+  hostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+
+Resources:
+  StunningDisco:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: "stunning-disco"
+      Name: !Ref restApiName
       DisableExecuteApiEndpoint: True
       EndpointConfiguration:
         Types:
           - REGIONAL
 
-  StunningDiscoApiDomain:
+  StunningDiscoDomain:
     Type: AWS::ApiGateway::DomainName
     Properties:
-      DomainName: home.vizzyy.com
+      DomainName: !Ref domainName
       EndpointConfiguration:
         Types:
           - REGIONAL
       MutualTlsAuthentication:
-        TruststoreUri: s3://vizzyy-truststore/ca/barney.crt
-      RegionalCertificateArn: arn:aws:acm:us-east-1:476889715112:certificate/57b4a856-23f0-4ed6-b581-b2ef1a79f030
+        TruststoreUri: !Ref trustStoreUri
+      RegionalCertificateArn: !Ref apiHostCert
       SecurityPolicy: TLS_1_2
 
-  StunningDiscoApiDomainMapping:
+  StunningDiscoDomainMapping:
     Type: 'AWS::ApiGateway::BasePathMapping'
     Properties:
-      DomainName: !Ref StunningDiscoApiDomain
-      RestApiId: !Ref StunningDiscoAPI
+      DomainName: !Ref StunningDiscoDomain
+      RestApiId: !Ref StunningDisco
       Stage: Prod
 
-#  DefaultResource:
-#    Type: AWS::ApiGateway::Resource
-#    DependsOn: StunningDiscoAPI
-#    Properties:
-#      RestApiId: !Ref StunningDiscoAPI
-#      ParentId: !GetAtt StunningDiscoAPI.RootResourceId
-#      PathPart: "root"
-
-  DefaultMethod:
+  StunningDiscoRootEndpoint:
     Type: AWS::ApiGateway::Method
-#    DependsOn: DefaultResource
     Properties:
-      RestApiId: !Ref StunningDiscoAPI
-      ResourceId: !GetAtt StunningDiscoAPI.RootResourceId
+      RestApiId: !Ref StunningDisco
+      ResourceId: !GetAtt StunningDisco.RootResourceId
       HttpMethod: "GET"
       AuthorizationType: NONE
       OperationName: "Root path"
       Integration:
         Type: "AWS"
-        Credentials: "arn:aws:iam::476889715112:instance-profile/MyS3AdminAccess"
+        Credentials: !Ref s3Credential
         IntegrationHttpMethod: "GET"
-        Uri: "arn:aws:apigateway:us-east-1:s3:path/home.vizzyy.com/index.html"
+        Uri: !Ref rootEndpointUri
 
-#  StunningDiscoAPIProdStage:
-#    Type: AWS::ApiGateway::Stage
-#    Properties:
-#      DeploymentId: !Ref StunningDiscoAPIDeployment
-#      RestApiId: !Ref StunningDiscoAPI
-#      StageName: Prod
-
-  StunningDiscoAPIDeployment:
+  StunningDiscoDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: DefaultMethod
+    DependsOn: StunningDiscoRootEndpoint
     Properties:
-      RestApiId: !Ref StunningDiscoAPI
+      RestApiId: !Ref StunningDisco
       StageName: Prod
+      StageDescription:
+        LoggingLevel: INFO
+        DataTraceEnabled: True
 
   StunningDiscoLogs:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/api/${StunningDiscoAPI}"
+      LogGroupName: !Sub "/aws/api/${StunningDisco}"
       RetentionInDays: 7
+
+  StunningDiscoDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref 'hostedZoneId'
+      Name: !Ref domainName
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt StunningDiscoDomain.RegionalHostedZoneId
+        DNSName: !GetAtt StunningDiscoDomain.RegionalDomainName
 
