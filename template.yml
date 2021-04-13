@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+
+  StunningDiscoAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: "stunning-disco"
+      DisableExecuteApiEndpoint: True
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  StunningDiscoApiDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: home.vizzyy.com
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      MutualTlsAuthentication:
+        TruststoreUri: s3://vizzyy-truststore/ca/barney.crt
+      RegionalCertificateArn: arn:aws:acm:us-east-1:476889715112:certificate/57b4a856-23f0-4ed6-b581-b2ef1a79f030
+      SecurityPolicy: TLS_1_2
+
+  StunningDiscoApiDomainMapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    Properties:
+      DomainName: !Ref StunningDiscoApiDomain
+      RestApiId: !Ref StunningDiscoAPI
+      Stage: Prod
+
+#  DefaultResource:
+#    Type: AWS::ApiGateway::Resource
+#    DependsOn: StunningDiscoAPI
+#    Properties:
+#      RestApiId: !Ref StunningDiscoAPI
+#      ParentId: !GetAtt StunningDiscoAPI.RootResourceId
+#      PathPart: "root"
+
+  DefaultMethod:
+    Type: AWS::ApiGateway::Method
+#    DependsOn: DefaultResource
+    Properties:
+      RestApiId: !Ref StunningDiscoAPI
+      ResourceId: !GetAtt StunningDiscoAPI.RootResourceId
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Root path"
+      Integration:
+        Type: "AWS"
+        Credentials: "arn:aws:iam::476889715112:instance-profile/MyS3AdminAccess"
+        IntegrationHttpMethod: "GET"
+        Uri: "arn:aws:apigateway:us-east-1:s3:path/home.vizzyy.com/index.html"
+
+#  StunningDiscoAPIProdStage:
+#    Type: AWS::ApiGateway::Stage
+#    Properties:
+#      DeploymentId: !Ref StunningDiscoAPIDeployment
+#      RestApiId: !Ref StunningDiscoAPI
+#      StageName: Prod
+
+  StunningDiscoAPIDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: DefaultMethod
+    Properties:
+      RestApiId: !Ref StunningDiscoAPI
+      StageName: Prod
+
+  StunningDiscoLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/api/${StunningDiscoAPI}"
+      RetentionInDays: 7
+
