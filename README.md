@@ -1,90 +1,40 @@
-```yaml
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: 'AWS::Serverless-2016-10-31'
+```bash
+#!/bin/bash
 
-Parameters:
-  domainName:
-    Type: String
-  restApiName:
-    Type: String
-  trustStoreUri:
-    Type: String
-  apiHostCert:
-    Type: String
-  s3Credential:
-    Type: String
-  rootEndpointUri:
-    Type: String
-  hostedZoneId:
-    Type: AWS::Route53::HostedZone::Id
+FUNC_NAME="stunning-disco"
 
-Resources:
-  StunningDisco:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      Name: !Ref restApiName
-      DisableExecuteApiEndpoint: True
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
+while [ -n "$1" ]
+do
+  case "$1" in
+    -d) API_ID=`aws apigateway get-rest-apis --query 'items[].id' --output yaml | cut -c 3-`; \
+      echo "Deleting existing stack ($API_ID): $FUNC_NAME"; \
+      aws cloudformation delete-stack --stack-name $FUNC_NAME; \
+      echo "Waiting for stack deletion to finish..."; \
+      aws cloudformation wait stack-delete-complete --stack-name $FUNC_NAME; \
+      aws logs delete-log-group --log-group-name API-Gateway-Execution-Logs_$API_ID/Prod ;;
+    *) echo "$1 is not an option" ;;
+  esac
+  shift
+done
 
-  StunningDiscoDomain:
-    Type: AWS::ApiGateway::DomainName
-    Properties:
-      DomainName: !Ref domainName
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
-      MutualTlsAuthentication:
-        TruststoreUri: !Ref trustStoreUri
-      RegionalCertificateArn: !Ref apiHostCert
-      SecurityPolicy: TLS_1_2
+echo "Creating Lambda Zip(s)..."
+zip -r -j http-request.zip lambdas/http-request.py
 
-  StunningDiscoDomainMapping:
-    Type: 'AWS::ApiGateway::BasePathMapping'
-    Properties:
-      DomainName: !Ref StunningDiscoDomain
-      RestApiId: !Ref StunningDisco
-      Stage: Prod
+echo "Packaging template..."
+sam package --s3-bucket vizzyy-packaging --output-template-file packaged.yml
 
-  StunningDiscoRootEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !GetAtt StunningDisco.RootResourceId
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Root path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref rootEndpointUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
+echo "Deploying stack..."
+sam deploy --template-file packaged.yml --stack-name $FUNC_NAME --capabilities CAPABILITY_IAM && echo "Finished deploying!"
 
-  StunningDiscoDeployment:
-    Type: AWS::ApiGateway::Deployment
-    DependsOn: StunningDiscoRootEndpoint
-    Properties:
-      RestApiId: !Ref StunningDisco
-      StageName: Prod
-      StageDescription:
-        LoggingLevel: INFO
-        DataTraceEnabled: True
+echo "Updating lambda function..."
+aws lambda update-function-code --function-name "http-request" --zip-file fileb://http-request.zip
 
-  StunningDiscoDnsRecord:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      HostedZoneId: !Ref 'hostedZoneId'
-      Name: !Ref domainName
-      Type: A
-      AliasTarget:
-        HostedZoneId: !GetAtt StunningDiscoDomain.RegionalHostedZoneId
-        DNSName: !GetAtt StunningDiscoDomain.RegionalDomainName
+API_ID=`aws apigateway get-rest-apis --query 'items[].id' --output yaml | cut -c 3-`
+echo "Deploying API ($API_ID) stage..."
+aws apigateway create-deployment --rest-api-id $API_ID --stage-name Prod
 
+rm packaged.yml
+rm http-request.zip
+echo "Finished cleanup."
 
 ```
