@@ -1,0 +1,63 @@
+<html>
+<title id="title">/inside</title>
+
+<head>
+    <style>
+        input {
+            width: 90%;
+            height: 8%;
+            border: none;
+            font-size: 200%;
+            border-radius: 0;
+            -webkit-appearance: none;
+        @include border-radius(0);
+            background-color: whitesmoke;
+        }
+    </style>
+</head>
+<body style="background-color:darkslategrey;">
+<div align="center">
+    <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe" style="width:0; height:0; border:none"></iframe>
+    <div>
+        <div>
+            <form action="/inside/arrange" target="dummyframe">
+                <input type="hidden" name="light" value="3" />
+                <input type="hidden" name="status" value="clear" />
+                <br><input type="submit" value="CLEAR">
+            </form>
+            <form action="/inside/arrange" target="dummyframe">
+                <input type="hidden" name="light" value="3" />
+                <input type="hidden" name="status" value="white" />
+                <br><input type="submit" value="WHITE">
+            </form>
+            <form action="/inside/arrange" target="dummyframe">
+                <input type="hidden" name="light" value="3" />
+                <input type="hidden" name="status" value="green" />
+                <br><input type="submit" value="GREEN">
+            </form>
+            <form action="/inside/arrange" target="dummyframe">
+                <input type="hidden" name="light" value="3" />
+                <input type="hidden" name="status" value="blue" />
+                <br><input type="submit" value="BLUE">
+            </form>
+            <form action="/inside/arrange" target="dummyframe">
+                <input type="hidden" name="light" value="3" />
+                <input type="hidden" name="status" value="red" />
+                <br><input type="submit" value="RED">
+            </form>
+            <form action="/inside/arrange" target="dummyframe">
+                <input type="hidden" name="light" value="3" />
+                <input type="hidden" name="status" value="rainbowCycle" />
+                <br><input type="submit" value="rainbowCycle">
+            </form>
+            <form action="/inside/custom">
+                <input type="hidden" name="light" value="3" />
+                <input type="hidden" name="status" value="white" />
+                <br><input type="submit" value="Custom">
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

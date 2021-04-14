@@ -1,0 +1,73 @@
+<html>
+<title id="title">EPIC LAMBDA</title>
+
+<head>
+    <style>
+        input {
+            width: 50%;
+            height: 8%;
+            border: none;
+            font-size: 200%;
+            border-radius: 0;
+            -webkit-appearance: none;
+        @include border-radius(0);
+            background-color: whitesmoke;
+        }
+        .column {
+            float: left;
+            width: 50%;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    </style>
+</head>
+<body style="background-color:darkslategrey;">
+<div align="center">
+    <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe" style="width:0; height:0; border:none"></iframe>
+
+    <div class="column">
+        <div class = row>
+            <br><br><br><br>
+        </div>
+        <div class = row>
+            <form action="/video" >
+                <br><input type="submit" value="VIDEO">
+            </form>
+        </div>
+        <div class = row>
+            <form action="/door" >
+                <br><input type="submit" value="DOOR">
+            </form>
+        </div>
+    </div>
+    <div class = column>
+        <div class = row>
+            <br><br><br><br>
+        </div>
+        <div class = row>
+            <form action="/lights">
+                <br><input type="submit" value="LIGHTS">
+            </form>
+        </div>
+        <div class = row>
+            <form action="/inside">
+                <br><input type="submit" value="INSIDE">
+            </form>
+        </div>
+        <div class = row>
+            <form action="/outside" >
+                <br><input type="submit" value="OUTSIDE">
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+
+</html>
+
+

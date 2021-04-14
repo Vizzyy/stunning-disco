@@ -1,0 +1,49 @@
+<html>
+<title id="title">/outside</title>
+
+<head>
+    <style>
+        input {
+            width: 90%;
+            height: 8%;
+            border: none;
+            font-size: 200%;
+            border-radius: 0;
+            -webkit-appearance: none;
+        @include border-radius(0);
+            background-color: whitesmoke;
+        }
+    </style>
+</head>
+<body style="background-color:darkslategrey;">
+<div align="center">
+    <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe" style="width:0; height:0; border:none"></iframe>
+    <div>
+        <div>
+            <form action="/outside/arrange/clear" target="dummyframe">
+                <br><input type="submit" value="CLEAR">
+            </form>
+            <form action="/outside/arrange/white" target="dummyframe">
+                <br><input type="submit" value="WHITE">
+            </form>
+            <form action="/outside/arrange/green" target="dummyframe">
+                <br><input type="submit" value="GREEN">
+            </form>
+            <form action="/outside/arrange/blue" target="dummyframe">
+                <br><input type="submit" value="BLUE">
+            </form>
+            <form action="/outside/arrange/red" target="dummyframe">
+                <br><input type="submit" value="RED">
+            </form>
+            <form action="/outside/arrange/rainbowCycle" target="dummyframe">
+                <br><input type="submit" value="rainbowCycle">
+            </form>
+            <form action="/outside/custom">
+                <br><input type="submit" value="Custom">
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

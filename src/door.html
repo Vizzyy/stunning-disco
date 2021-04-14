@@ -1,0 +1,47 @@
+<html>
+<title id="title">DOOR</title>
+<style>
+    input {
+        width: 50%;
+        height: 8%;
+        border: none;
+        font-size: 200%;
+        border-radius: 0;
+        -webkit-appearance: none;
+    @include border-radius(0);
+        background-color: whitesmoke;
+    }
+    .mainBackground {
+        background-color: darkblue;
+        color: white;
+    }
+</style>
+
+<body class="mainBackground">
+<div align="center">
+    <iframe width="0" height="0" border="0" name="dummyframe"
+            id="dummyframe" style="width:0; height:0; border:none"></iframe>
+    <div>
+        <br>
+        <div>
+            <div style="font-size: 50px;">PORTAL</div>
+            <div id="lightStatus1"></div>
+            <br><br><br><br>
+            <form action="/door/toggle" target="dummyframe">
+                <input type="hidden" name="status" value="open"/>
+                <input type="hidden" name="entry" value="OPENED: OVERRIDE BY UI"/>
+                <br><input type="submit" value="OPEN" height="70" style="width: 50%;">
+            </form>
+            <form action="/door/toggle" target="dummyframe">
+                <input type="hidden" name="status" value="close"/>
+                <input type="hidden" name="entry" value="CLOSED: OVERRIDE BY UI"/>
+                <br><input type="submit" value="CLOSE" height="70" style="width: 50%;">
+            </form>
+        </div>
+    </div>
+
+    <br>
+</div>
+</body>
+
+</html>
