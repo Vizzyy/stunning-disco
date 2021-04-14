@@ -16,6 +16,20 @@ Parameters:
     Type: String
   hostedZoneId:
     Type: AWS::Route53::HostedZone::Id
+  lightsPageUri:
+    Type: String
+  doorPageUri:
+    Type: String
+  ssmResource:
+    Type: String
+  ssmPath:
+    Type: String
+  insidePageUri:
+    Type: String
+  outsidePageUri:
+    Type: String
+  faviconUri:
+    Type: String
 
 Resources:
   StunningDisco:
@@ -65,9 +79,255 @@ Resources:
         - StatusCode: 200
           ResponseModels: { "text/html": "Empty" }
 
+  DoorResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: door
+      RestApiId: !Ref StunningDisco
+
+  DoorPageEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref DoorResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Door base path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref doorPageUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  DoorToggleResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref DoorResource
+      PathPart: toggle
+      RestApiId: !Ref StunningDisco
+
+  DoorInvokeEndpoint:
+    DependsOn: HttpRequestLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref DoorToggleResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      OperationName: "Door toggle path by invoking lambda"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
+
+  LightsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: lights
+      RestApiId: !Ref StunningDisco
+
+  LightsPageEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref LightsResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Lights base path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref lightsPageUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  InsideResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: inside
+      RestApiId: !Ref StunningDisco
+
+  InsidePageEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref InsideResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Inside base path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref insidePageUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  InsideArrangeResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref InsideResource
+      PathPart: arrange
+      RestApiId: !Ref StunningDisco
+
+  InsideInvokeEndpoint:
+    DependsOn: HttpRequestLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref InsideArrangeResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      OperationName: "Inside toggle path by invoking lambda"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
+
+  FaviconResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: favicon.ico
+      RestApiId: !Ref StunningDisco
+
+  FaviconEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref FaviconResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Favicon path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref faviconUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  OutsideResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: outside
+      RestApiId: !Ref StunningDisco
+
+  OutsidePageEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref OutsideResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Outside base path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref outsidePageUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  OutsideArrangeResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref OutsideResource
+      PathPart: arrange
+      RestApiId: !Ref StunningDisco
+
+  OutsideInvokeEndpoint:
+    DependsOn: HttpRequestLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref OutsideArrangeResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      OperationName: "Outside toggle path by invoking lambda"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
+
+  LightsToggleResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref LightsResource
+      PathPart: toggle
+      RestApiId: !Ref StunningDisco
+
+  LightsInvokeEndpoint:
+    DependsOn: HttpRequestLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref LightsToggleResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      OperationName: "Lights toggle path by invoking lambda"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
+
+  HttpRequestLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'http-request'
+      Handler: http-request.lambda_handler
+      Runtime: python3.8
+      CodeUri: http-request.zip
+      MemorySize: 128
+      Timeout: 30
+      Policies:
+        - Statement:
+            - Sid: SSMGetParamsByPath
+              Effect: Allow
+              Action:
+                - ssm:GetParametersByPath
+              Resource: !Ref ssmResource
+        - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          SSM_PATH: !Ref ssmPath
+          TZ: America/New_York
+
+  HttpRequestLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${HttpRequestLambda}"
+      RetentionInDays: 7
+
   StunningDiscoDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: StunningDiscoRootEndpoint
+    DependsOn: [StunningDiscoRootEndpoint, LightsInvokeEndpoint]
     Properties:
       RestApiId: !Ref StunningDisco
       StageName: Prod

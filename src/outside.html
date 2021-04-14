@@ -1,5 +1,5 @@
 <html>
-<title id="title">/outside</title>
+<title id="title">OUTSIDE</title>
 
 <head>
     <style>
@@ -15,27 +15,41 @@
         }
     </style>
 </head>
-<body style="background-color:darkslategrey;">
+<body style="background-color:deepskyblue;">
 <div align="center">
     <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe" style="width:0; height:0; border:none"></iframe>
     <div>
+        <h2> OUTSIDE </h2>
+
         <div>
-            <form action="/outside/arrange/clear" target="dummyframe">
+            <form action="/outside/arrange" target="dummyframe" method="post">
+                <input type="hidden" name="light" value="4" />
+                <input type="hidden" name="status" value="clear" />
                 <br><input type="submit" value="CLEAR">
             </form>
-            <form action="/outside/arrange/white" target="dummyframe">
+            <form action="/outside/arrange" target="dummyframe" method="post">
+                <input type="hidden" name="light" value="4" />
+                <input type="hidden" name="status" value="white" />
                 <br><input type="submit" value="WHITE">
             </form>
-            <form action="/outside/arrange/green" target="dummyframe">
+            <form action="/outside/arrange" target="dummyframe" method="post">
+                <input type="hidden" name="light" value="4" />
+                <input type="hidden" name="status" value="green" />
                 <br><input type="submit" value="GREEN">
             </form>
-            <form action="/outside/arrange/blue" target="dummyframe">
+            <form action="/outside/arrange" target="dummyframe" method="post">
+                <input type="hidden" name="light" value="4" />
+                <input type="hidden" name="status" value="blue" />
                 <br><input type="submit" value="BLUE">
             </form>
-            <form action="/outside/arrange/red" target="dummyframe">
+            <form action="/outside/arrange" target="dummyframe" method="post">
+                <input type="hidden" name="light" value="4" />
+                <input type="hidden" name="status" value="red" />
                 <br><input type="submit" value="RED">
             </form>
-            <form action="/outside/arrange/rainbowCycle" target="dummyframe">
+            <form action="/outside/arrange" target="dummyframe" method="post">
+                <input type="hidden" name="light" value="4" />
+                <input type="hidden" name="status" value="rainbowCycle" />
                 <br><input type="submit" value="rainbowCycle">
             </form>
             <form action="/outside/custom">
