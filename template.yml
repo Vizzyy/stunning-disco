@@ -59,6 +59,11 @@ Resources:
         Credentials: !Ref s3Credential
         IntegrationHttpMethod: "GET"
         Uri: !Ref rootEndpointUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
 
   StunningDiscoDeployment:
     Type: AWS::ApiGateway::Deployment
@@ -69,12 +74,6 @@ Resources:
       StageDescription:
         LoggingLevel: INFO
         DataTraceEnabled: True
-
-  StunningDiscoLogs:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName: !Sub "/aws/api/${StunningDisco}"
-      RetentionInDays: 7
 
   StunningDiscoDnsRecord:
     Type: AWS::Route53::RecordSet
