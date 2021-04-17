@@ -30,6 +30,10 @@ Parameters:
     Type: String
   faviconUri:
     Type: String
+  doorStreamPath:
+    Type: String
+  streamsPageUri:
+    Type: String
 
 Resources:
   StunningDisco:
@@ -78,6 +82,54 @@ Resources:
       MethodResponses:
         - StatusCode: 200
           ResponseModels: { "text/html": "Empty" }
+
+  StreamsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: streams
+      RestApiId: !Ref StunningDisco
+
+  StreamsPageEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StreamsResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Streams base path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref streamsPageUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  StreamsDoorResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StreamsResource
+      PathPart: door
+      RestApiId: !Ref StunningDisco
+
+  StreamsDoorInvokeEndpoint:
+    DependsOn: HttpRequestLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StreamsDoorResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      OperationName: "Invoke door stream"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${RedirectLambda.Arn}/invocations # ARN
 
   DoorResource:
     Type: AWS::ApiGateway::Resource
@@ -323,6 +375,27 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${HttpRequestLambda}"
+      RetentionInDays: 7
+
+  RedirectLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'redirect'
+      Handler: redirect.lambda_handler
+      Runtime: python3.8
+      CodeUri: redirect.zip
+      Timeout: 5
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          REDIRECT_URL: !Ref doorStreamPath
+          TZ: America/New_York
+
+  RedirectLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${RedirectLambda}"
       RetentionInDays: 7
 
   StunningDiscoDeployment:
