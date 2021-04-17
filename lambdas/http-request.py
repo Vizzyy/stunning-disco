@@ -61,7 +61,7 @@ def lambda_handler(event=None, context=None):
             elif param_map["light"] == "3":
                 target_route += "/strip/inside"
             elif param_map["light"] == "4":
-                target_route += "/strip/inside"
+                target_route += "/strip/outside"
         else:
             target_route = f"{target_route}/door/{param_map['status']}"
             method = "GET"
