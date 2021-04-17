@@ -1,0 +1,25 @@
+input {
+  width: 50%;
+  height: 8%;
+  border: none;
+  font-size: 200%;
+  border-radius: 0;
+  -webkit-appearance: none;
+  @include border-radius(0);
+  background-color: whitesmoke;
+}
+.column {
+  float: left;
+  width: 50%;
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+body {
+  background-color: deepskyblue;
+}

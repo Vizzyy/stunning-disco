@@ -1,33 +1,18 @@
-<html>
-<title id="title">Lights</title>
-<style>
-    input {
-        width: 50%;
-        height: 8%;
-        border: none;
-        font-size: 200%;
-        border-radius: 0;
-        -webkit-appearance: none;
-    @include border-radius(0);
-        background-color: whitesmoke;
-    }
-    .mainBackground {
-        background-color: deepskyblue;
-        color: white;
-    }
-</style>
-
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <title>Lights</title>
+</head>
 <body class="mainBackground">
+    <div align="center">
+        <iframe width="0" height="0" border="0" name="dummyframe"
+                id="dummyframe" style="width:0; height:0; border:none" ></iframe>
 
-<div align="center">
-    <iframe width="0" height="0" border="0" name="dummyframe"
-            id="dummyframe" style="width:0; height:0; border:none" ></iframe>
-    <div>
         <br>
         <div style="float: left;width:50%;">
-            <div style="font-size: 50px;">Light 1</div>
-            <div id="lightStatus1" style="float: left; width:100%;"></div>
-            <br><br><br><br>
+            <h1>Xmas</h1>
+            <br><br>
             <form action="/lights/toggle" target="dummyframe" method="post">
                 <input type="hidden" name="light" value="1" />
                 <input type="hidden" name="status" value="true" />
@@ -40,9 +25,8 @@
             </form>
         </div>
         <div style="float: right;width:50%;">
-            <div style="font-size: 50px;">Light 2</div>
-            <div id="lightStatus2" style="float: right; width:100%;"></div>
-            <br><br><br><br>
+            <h1>Tree</h1>
+            <br><br>
             <form action="/lights/toggle" target="dummyframe" method="post">
                 <input type="hidden" name="light" value="2" />
                 <input type="hidden" name="status" value="true" />
@@ -56,8 +40,6 @@
         </div>
     </div>
 
-    <br>
-</div>
 </body>
 
 </html>

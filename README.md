@@ -17,24 +17,32 @@ do
   shift
 done
 
+./scripts/upload_web_src.sh
+
 echo "Creating Lambda Zip(s)..."
 zip -r -j http-request.zip lambdas/http-request.py
+zip -r -j redirect.zip lambdas/redirect.py
+zip -r -j serve-image.zip lambdas/serve-image.py
 
 echo "Packaging template..."
 sam package --s3-bucket vizzyy-packaging --output-template-file packaged.yml
 
 echo "Deploying stack..."
-sam deploy --template-file packaged.yml --stack-name $FUNC_NAME --capabilities CAPABILITY_IAM && echo "Finished deploying!"
+sam deploy --template-file packaged.yml --stack-name $FUNC_NAME --capabilities CAPABILITY_IAM \
+&& echo "Finished deploying!" || exit 1
 
-echo "Updating lambda function..."
+echo "Updating lambda function(s)..."
 aws lambda update-function-code --function-name "http-request" --zip-file fileb://http-request.zip
+aws lambda update-function-code --function-name "redirect" --zip-file fileb://redirect.zip
 
 API_ID=`aws apigateway get-rest-apis --query 'items[].id' --output yaml | cut -c 3-`
 echo "Deploying API ($API_ID) stage..."
 aws apigateway create-deployment --rest-api-id $API_ID --stage-name Prod
 
 rm packaged.yml
+rm redirect.zip
 rm http-request.zip
+rm serve-image.zip
 echo "Finished cleanup."
 
 ```

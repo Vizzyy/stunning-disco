@@ -21,12 +21,15 @@ done
 echo "Creating Lambda Zip(s)..."
 zip -r -j http-request.zip lambdas/http-request.py
 zip -r -j redirect.zip lambdas/redirect.py
+zip -r -j serve-image.zip lambdas/serve-image.py
 
 echo "Packaging template..."
 sam package --s3-bucket vizzyy-packaging --output-template-file packaged.yml
 
 echo "Deploying stack..."
-sam deploy --template-file packaged.yml --stack-name $FUNC_NAME --capabilities CAPABILITY_IAM && echo "Finished deploying!"
+sam deploy --template-file packaged.yml --stack-name $FUNC_NAME \
+--capabilities CAPABILITY_IAM --no-fail-on-empty-changeset \
+&& echo "Finished deploying!" || exit 1
 
 echo "Updating lambda function(s)..."
 aws lambda update-function-code --function-name "http-request" --zip-file fileb://http-request.zip
@@ -39,4 +42,5 @@ aws apigateway create-deployment --rest-api-id $API_ID --stage-name Prod
 rm packaged.yml
 rm redirect.zip
 rm http-request.zip
+rm serve-image.zip
 echo "Finished cleanup."
