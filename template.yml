@@ -422,6 +422,12 @@ Resources:
               Action:
                 - ssm:GetParametersByPath
               Resource: !Ref ssmResource
+        - Statement:
+            - Sid: SQSpushRecord
+              Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: 'arn:aws:sqs:us-east-1:476889715112:DatabaseMessageQueue'
         - AWSLambdaBasicExecutionRole
       Environment:
         Variables:
@@ -477,3 +483,25 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${RedirectLambda}"
       RetentionInDays: 7
+
+  ErrorsAlarm: # Alarm if 1 bad data point (of over 3 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - arn:aws:sns:us-east-1:476889715112:unhealthyHost
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Threshold: '3'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName1
+          Value: redirect
+        - Name: FunctionName2
+          Value: serve-image
+        - Name: FunctionName3
+          Value: http-request

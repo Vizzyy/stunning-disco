@@ -1,4 +1,6 @@
 import base64
+import datetime
+import json
 
 import boto3
 import os
@@ -9,6 +11,7 @@ from urllib3 import Retry
 from urllib3.exceptions import MaxRetryError
 
 ssm = boto3.client('ssm')
+sqs = boto3.client('sqs')
 
 paginator = ssm.get_paginator('get_parameters_by_path')
 iterator = paginator.paginate(Path=os.environ.get('SSM_PATH'), WithDecryption=True)
@@ -38,7 +41,34 @@ conn = urllib3.connection_from_url(
 )
 
 
+def sqs_send(start_time: datetime, target_route: str, success: bool = True):
+    queue_url = os.environ["queue-url"]
+    now = datetime.datetime.now()
+    elapsed = now - start_time
+    elapsed_ms = elapsed.total_seconds() * 1000  # elapsed milliseconds
+    path = target_route.split(".com")[1]
+
+    message = {
+        "action": "insert",
+        "table": "canary_metrics",
+        "values": {
+            "path": path,
+            "ms_elapsed": elapsed_ms,
+            "timestamp": now.__str__(),
+            "success": success
+        }
+    }
+
+    # Send message to SQS queue
+    print("Pushing message to queue...")
+    response = sqs.send_message(QueueUrl=queue_url, MessageBody=(json.dumps(message)))
+    print(message)
+    if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+        raise RuntimeError("Could not enqueue message!")
+
+
 def lambda_handler(event=None, context=None):
+    start_time = datetime.datetime.now()
     try:
         print("Event:")
         print(event)
@@ -76,9 +106,11 @@ def lambda_handler(event=None, context=None):
                                             timeout=5.0, retries=Retry(total=3))
     except MaxRetryError as max_e:
         print(f"Could not establish connection to hub: {max_e}")
+        sqs_send(start_time, target_route, False)
         raise RuntimeError
     except Exception as e:
         print(f"Unknown error making request: {e}")
+        sqs_send(start_time, target_route, False)
         raise RuntimeError
 
     result = {
@@ -95,7 +127,10 @@ def lambda_handler(event=None, context=None):
     if result['statusCode'] != 200:
         print("Encountered Server Error.")
         print(vars(response))
+        sqs_send(start_time, target_route, False)
         raise RuntimeError
+
+    sqs_send(start_time, target_route, True)
 
     return result
 
