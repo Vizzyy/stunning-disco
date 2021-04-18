@@ -6,7 +6,7 @@ s3 = boto3.resource('s3')
 
 
 def lambda_handler(event=None, context=None):
-    resource = event["path"][1:]
+    resource = 'favicon.ico' #event["path"][1:]
     bucket = os.environ.get('BUCKET_NAME')
     image = s3.Object(bucket, resource)
     img_data = image.get().get('Body').read()
@@ -14,14 +14,17 @@ def lambda_handler(event=None, context=None):
     print(f"Event: {event}")
     print(f"Resource: {resource}, Bucket: {bucket}")
 
-    result = {
-        'statusCode': 200,
-        'body': base64.b64encode(img_data),
-        'isBase64Encoded': True,
-        'headers': {
-            'Content-Type': 'image/png'
-        }
-    }
+    # result = {
+    #     'statusCode': 200,
+    #     'body': base64.b64encode(img_data),
+    #     'isBase64Encoded': True,
+    #     'headers': {
+    #         'Content-Type': 'image/png',
+    #         'Accept': 'image/png'
+    #     }
+    # }
+
+    result = base64.b64encode(img_data)
 
     print(f"Result: {result}")
 

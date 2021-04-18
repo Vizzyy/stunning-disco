@@ -34,6 +34,7 @@ sam deploy --template-file packaged.yml --stack-name $FUNC_NAME \
 echo "Updating lambda function(s)..."
 aws lambda update-function-code --function-name "http-request" --zip-file fileb://http-request.zip
 aws lambda update-function-code --function-name "redirect" --zip-file fileb://redirect.zip
+aws lambda update-function-code --function-name "serve-image" --zip-file fileb://serve-image.zip
 
 API_ID=`aws apigateway get-rest-apis --query 'items[].id' --output yaml | cut -c 3-`
 echo "Deploying API ($API_ID) stage..."

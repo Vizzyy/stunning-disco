@@ -28,12 +28,14 @@ echo "Packaging template..."
 sam package --s3-bucket vizzyy-packaging --output-template-file packaged.yml
 
 echo "Deploying stack..."
-sam deploy --template-file packaged.yml --stack-name $FUNC_NAME --capabilities CAPABILITY_IAM \
+sam deploy --template-file packaged.yml --stack-name $FUNC_NAME \
+--capabilities CAPABILITY_IAM --no-fail-on-empty-changeset \
 && echo "Finished deploying!" || exit 1
 
 echo "Updating lambda function(s)..."
 aws lambda update-function-code --function-name "http-request" --zip-file fileb://http-request.zip
 aws lambda update-function-code --function-name "redirect" --zip-file fileb://redirect.zip
+aws lambda update-function-code --function-name "serve-image" --zip-file fileb://serve-image.zip
 
 API_ID=`aws apigateway get-rest-apis --query 'items[].id' --output yaml | cut -c 3-`
 echo "Deploying API ($API_ID) stage..."

@@ -59,12 +59,43 @@ Resources:
       RegionalCertificateArn: !Ref apiHostCert
       SecurityPolicy: TLS_1_2
 
+  ProdStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: Prod
+      RestApiId: !Ref StunningDisco
+      DeploymentId: !Ref StunningDiscoDeployment
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: True
+          ThrottlingBurstLimit: '10'
+          ThrottlingRateLimit: '10.0'
+
   StunningDiscoDomainMapping:
     Type: 'AWS::ApiGateway::BasePathMapping'
+    DependsOn: ProdStage
     Properties:
       DomainName: !Ref StunningDiscoDomain
       RestApiId: !Ref StunningDisco
-      Stage: Prod
+      Stage: !Ref ProdStage
+
+  StunningDiscoDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: [StunningDiscoRootEndpoint, LightsInvokeEndpoint]
+    Properties:
+      RestApiId: !Ref StunningDisco
+
+  StunningDiscoDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref 'hostedZoneId'
+      Name: !Ref domainName
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt StunningDiscoDomain.RegionalHostedZoneId
+        DNSName: !GetAtt StunningDiscoDomain.RegionalDomainName
 
   StunningDiscoRootEndpoint:
     Type: AWS::ApiGateway::Method
@@ -272,10 +303,19 @@ Resources:
       AuthorizationType: NONE
       OperationName: "Serve image by invoking lambda"
       Integration:
-        Type: AWS_PROXY
+        Type: AWS
         Credentials: !Ref s3Credential
         IntegrationHttpMethod: POST # needs to be POST
         Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ServeImageLambda.Arn}/invocations # ARN
+        IntegrationResponses:
+          - StatusCode: 200
+            ContentHandling: CONVERT_TO_BINARY
+            ResponseParameters:
+              method.response.header.Content-Type: "'image/png'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Content-Type: true
 
   StylesheetResource:
     Type: AWS::ApiGateway::Resource
@@ -444,24 +484,3 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${RedirectLambda}"
       RetentionInDays: 7
-
-  StunningDiscoDeployment:
-    Type: AWS::ApiGateway::Deployment
-    DependsOn: [StunningDiscoRootEndpoint, LightsInvokeEndpoint]
-    Properties:
-      RestApiId: !Ref StunningDisco
-      StageName: Prod
-      StageDescription:
-        LoggingLevel: INFO
-        DataTraceEnabled: True
-
-  StunningDiscoDnsRecord:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      HostedZoneId: !Ref 'hostedZoneId'
-      Name: !Ref domainName
-      Type: A
-      AliasTarget:
-        HostedZoneId: !GetAtt StunningDiscoDomain.RegionalHostedZoneId
-        DNSName: !GetAtt StunningDiscoDomain.RegionalDomainName
-
