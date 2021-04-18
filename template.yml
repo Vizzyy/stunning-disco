@@ -43,6 +43,8 @@ Resources:
     Properties:
       Name: !Ref restApiName
       DisableExecuteApiEndpoint: True
+      BinaryMediaTypes:
+        - "*/*" # Allow for images to be returned by lambda proxy
       EndpointConfiguration:
         Types:
           - REGIONAL
@@ -303,19 +305,10 @@ Resources:
       AuthorizationType: NONE
       OperationName: "Serve image by invoking lambda"
       Integration:
-        Type: AWS
+        Type: AWS_PROXY
         Credentials: !Ref s3Credential
         IntegrationHttpMethod: POST # needs to be POST
         Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ServeImageLambda.Arn}/invocations # ARN
-        IntegrationResponses:
-          - StatusCode: 200
-            ContentHandling: CONVERT_TO_BINARY
-            ResponseParameters:
-              method.response.header.Content-Type: "'image/png'"
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Content-Type: true
 
   StylesheetResource:
     Type: AWS::ApiGateway::Resource

@@ -1,3 +1,5 @@
+import base64
+
 import boto3
 import os
 import urllib3
@@ -40,7 +42,7 @@ def lambda_handler(event=None, context=None):
     try:
         print("Event:")
         print(event)
-        body = event["body"]
+        body = base64.b64decode(event["body"]).decode('utf-8')
         print(f"Body: {body}")
 
         query_params = body.split("&")
@@ -83,7 +85,9 @@ def lambda_handler(event=None, context=None):
         'statusCode': response.status,
         'body': str(response.data),
         'isBase64Encoded': False,
-        'headers': {}
+        'headers': {
+            "Content-Type": "application/json"
+        }
     }
 
     print(f"Result status: {result['statusCode']}")
