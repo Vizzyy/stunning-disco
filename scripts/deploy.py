@@ -50,7 +50,7 @@ def zip_lambda_resources(debug=False):
         lambda_file_name = lambda_source_path.split('/')[-1]
         lambda_zip_name = f'{lambda_file_name.split(".py")[0]}.zip'
         with zipfile.ZipFile(lambda_zip_name, 'w') as lambda_function_zip:
-            lambda_function_zip.write(lambda_source_path)
+            lambda_function_zip.write(lambda_source_path, arcname=lambda_file_name)
         lambda_zip_files.append(lambda_zip_name)
     print(f"Zipped lambda resources: {lambda_zip_files}")
     return lambda_zip_files
