@@ -14,10 +14,8 @@ lambda_client = boto3.client('lambda')
 api_client = boto3.client('apigateway')
 cfn_client = boto3.client('cloudformation')
 log_client = boto3.client('logs')
-
 stack_name = "stunning-disco"
 web_src_bucket = os.environ.get('WEB_SRC_BUCKET')
-project_root = "/Users/barnabasvizy/projects/stunning-disco"
 
 
 def arguments():
@@ -33,7 +31,7 @@ def arguments():
 
 
 def deploy_web_resource(debug=False):
-    web_src_files = glob.glob(f'{project_root}/src/*')
+    web_src_files = glob.glob(f'src/*')
     for file_path in web_src_files:
         file_name = file_path.split('/')[-1]
         s3_client.upload_file(file_path, web_src_bucket, file_name)
@@ -43,7 +41,7 @@ def deploy_web_resource(debug=False):
 
 
 def zip_lambda_resources(debug=False):
-    lambda_src_files = glob.glob(f'{project_root}/lambdas/*')
+    lambda_src_files = glob.glob(f'lambdas/*')
     if debug: print(f"lambda_src_files: {lambda_src_files}")
     lambda_zip_files = []
     for lambda_source_path in lambda_src_files:
@@ -110,6 +108,7 @@ def delete_cfn_resources(debug=False):
     if debug: print(f"delete_stack response: {response}")
 
     stack_delete_waiter = cfn_client.get_waiter('stack_delete_complete')
+    print(f"Waiting on deletion of {stack_name}...")
     stack_delete_waiter.wait(StackName=stack_name)
     print(f"Successfully deleted stack {stack_name}.")
 
@@ -124,21 +123,21 @@ def deploy_sam_resources(debug=False):
     zip_files = zip_lambda_resources()
 
     print("Packaging SAM resources.")
-    package_cmd = f"sam package --template-file {project_root}/template.yml --s3-bucket vizzyy-packaging " \
-                  f"--output-template-file {project_root}/packaged.yml".split(' ')
+    package_cmd = f"sam package --template-file template.yml --s3-bucket vizzyy-packaging " \
+                  f"--output-template-file packaged.yml".split(' ')
     result = subprocess.run(package_cmd, capture_output=True)
     if debug: print(result.stdout.decode("utf-8"))
     print("SAM package successful.")
 
     print("Deploying SAM resources.")
-    deploy_cmd = f"sam deploy --template-file {project_root}/packaged.yml --stack-name {stack_name} " \
+    deploy_cmd = f"sam deploy --template-file packaged.yml --stack-name {stack_name} " \
                  f"--capabilities CAPABILITY_IAM --no-fail-on-empty-changeset".split(' ')
     result = subprocess.run(deploy_cmd, capture_output=True)
     if debug: print(result.stdout.decode("utf-8"))
     print("SAM deploy successful.")
 
     delete_lambda_zips(zip_files)
-    os.remove(f"{project_root}/packaged.yml")
+    os.remove(f"packaged.yml")
 
 
 if __name__ == "__main__":
