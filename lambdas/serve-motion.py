@@ -20,21 +20,10 @@ SECRETS = json.loads(os.environ["secrets"])
 with open('/tmp/db-cert', 'w') as file:
     file.write(os.environ["db-cert"])
 
-ssl_config = {
-    'user': SECRETS["database"]["DB_USER"],
-    'password': SECRETS["database"]["DB_PASS"],
-    'host': SECRETS["HUB_HOST"],
-    'port': SECRETS["database"]["DB_PORT"],
-    'database': SECRETS["database"]["DB_USER"],
-    'ssl_ca': '/tmp/db-cert',
-    'cursorclass': pymysql.cursors.DictCursor
-}
-
 
 def lambda_handler(event=None, context=None):
     print(f"Event: {event}")
 
-    # db = pymysql.connect(**ssl_config)
     db = pymysql.connect(host=SECRETS["HUB_HOST"],
                          user=SECRETS["database"]["DB_USER"],
                          password=SECRETS["database"]["DB_PASS"],
@@ -48,7 +37,6 @@ def lambda_handler(event=None, context=None):
     sql = "select * from images order by id desc limit 0,1"
     cursor.execute(sql)
     results = cursor.fetchone()
-    # print(results)
 
     result = {
         'statusCode': 200,
@@ -58,8 +46,6 @@ def lambda_handler(event=None, context=None):
         },
         'body': base64.b64encode(results["Image"]).decode('utf-8'),
     }
-
-    # print(f"Result: {result}")
 
     return result
 
