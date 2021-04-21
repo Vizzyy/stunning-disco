@@ -5,6 +5,7 @@ import datetime
 import glob
 import json
 import os
+import shutil
 import boto3
 import zipfile
 import subprocess
@@ -21,6 +22,7 @@ web_src_bucket = os.environ.get('WEB_SRC_BUCKET')
 def arguments():
     parser = argparse.ArgumentParser(description='Parameterized deployment script for Stunning-Disco.')
     parser.add_argument('--lambdas',    '-l',  help='Deploy lambda code.', action='store_true')
+    parser.add_argument('--layers',     '-y',  help='Deploy lambda layers.', action='store_true')
     parser.add_argument('--web',        '-w',  help='Deploy front-end web-resources.', action='store_true')
     parser.add_argument('--sam',        '-s',  help='Package and deploy SAM template.', action='store_true')
     parser.add_argument('--api',        '-g',  help='Deploy API Gateway stage.', action='store_true')
@@ -52,6 +54,63 @@ def zip_lambda_resources(debug=False):
         lambda_zip_files.append(lambda_zip_name)
     print(f"Zipped lambda resources: {lambda_zip_files}")
     return lambda_zip_files
+
+
+def deploy_lambda_layers(debug=False):
+    lambda_layers = glob.glob(f'layers/*')
+    print(f"Packaging lambda layers: {lambda_layers}")
+    for layer in lambda_layers:
+        layer_name = layer.split('/')[-1]
+
+        os.mkdir(f"{layer}/python")
+
+        package_cmd = f"python3 -m pip install -t {layer}/python {layer_name}".split(' ')
+        result = subprocess.run(package_cmd, capture_output=True)
+        if result.returncode != 0 or result.stderr:
+            print(result.stderr.decode("utf-8"))
+        elif debug:
+            print(result.stdout.decode("utf-8"))
+        print(f"Successfully packaged {layer}.")
+
+        result_zip = f"{layer_name}_layer"
+        shutil.make_archive(result_zip, 'zip', f"{layer}")
+        s3_client.upload_file(f"{result_zip}.zip", "vizzyy-packaging", f"{result_zip}.zip")
+        shutil.rmtree(f"{layer}/python")
+
+        # file_bytes = open(f"{result_zip}.zip", 'rb').read()
+        # response = lambda_client.publish_layer_version(
+        #     LayerName=result_zip,
+        #     Description=result_zip,
+        #     Content={
+        #         'ZipFile': file_bytes
+        #     },
+        #     CompatibleRuntimes=['python3.8'],
+        # )
+        # if debug: print(response)
+
+        print(f"Successfully deployed {result_zip}.")
+        os.remove(f"{result_zip}.zip")
+
+    return lambda_layers
+
+
+def delete_lambda_layers(debug=False):
+    lambda_layers = glob.glob(f'layers/*')
+    print(f"Deleting lambda layers: {lambda_layers}")
+    for layer in lambda_layers:
+        layer_name = layer.split('/')[-1] + "_layer"
+        layer_versions = lambda_client.list_layer_versions(
+            LayerName=layer_name,
+        )["LayerVersions"]
+        if debug: print(layer_versions)
+        for layer_version in layer_versions:
+            version_num = layer_version["Version"]
+            response = lambda_client.delete_layer_version(
+                LayerName=layer_name,
+                VersionNumber=version_num
+            )
+            if debug: print(response)
+            print(f"Deleted {layer_name} version {version_num}")
 
 
 def deploy_lambda_resources(debug=False):
@@ -126,15 +185,23 @@ def deploy_sam_resources(debug=False):
     package_cmd = f"sam package --template-file template.yml --s3-bucket vizzyy-packaging " \
                   f"--output-template-file packaged.yml".split(' ')
     result = subprocess.run(package_cmd, capture_output=True)
-    if debug: print(result.stdout.decode("utf-8"))
-    print("SAM package successful.")
+    if result.returncode != 0:
+        print(result.stderr.decode("utf-8"))
+    elif debug:
+        print(result.stdout.decode("utf-8"))
+    else:
+        print("SAM package successful.")
 
     print("Deploying SAM resources.")
     deploy_cmd = f"sam deploy --template-file packaged.yml --stack-name {stack_name} " \
                  f"--capabilities CAPABILITY_IAM --no-fail-on-empty-changeset".split(' ')
     result = subprocess.run(deploy_cmd, capture_output=True)
-    if debug: print(result.stdout.decode("utf-8"))
-    print("SAM deploy successful.")
+    if result.returncode != 0:
+        print(result.stderr.decode("utf-8"))
+    elif debug:
+        print(result.stdout.decode("utf-8"))
+    else:
+        print("SAM deploy successful.")
 
     delete_lambda_zips(zip_files)
     os.remove(f"packaged.yml")
@@ -145,10 +212,13 @@ if __name__ == "__main__":
     args = arguments()
 
     # Order kind of matters here -- if we're gonna delete we want it to be first
-    if args.delete or args.all:
+    if args.delete:
         delete_cfn_resources(args.debug)
+        delete_lambda_layers(args.debug)
     if args.web or args.all:
         deploy_web_resource(args.debug)
+    if args.sam or args.layers or args.all:
+        deploy_lambda_layers(args.debug)
     if args.sam or args.all:
         deploy_sam_resources(args.debug)
     elif args.lambdas or args.all:

@@ -36,6 +36,8 @@ Parameters:
     Type: String
   stylesheetUri:
     Type: String
+  streamsMotionPageUri:
+    Type: String
 
 Resources:
   StunningDisco:
@@ -150,6 +152,54 @@ Resources:
       ParentId: !Ref StreamsResource
       PathPart: door
       RestApiId: !Ref StunningDisco
+
+  StreamsMotionResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StreamsResource
+      PathPart: motion
+      RestApiId: !Ref StunningDisco
+
+  StreamsMotionPageEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StreamsMotionResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Streams motion base path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref streamsMotionPageUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  StreamsMotionBlobResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StreamsMotionResource
+      PathPart: blob
+      RestApiId: !Ref StunningDisco
+
+  StreamsMotionBlobEndpoint:
+    DependsOn: ServeImageLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StreamsMotionBlobResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      OperationName: "Serve motion blob by invoking lambda"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: POST # needs to be POST
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ServeMotionLambda.Arn}/invocations # ARN
 
   StreamsDoorInvokeEndpoint:
     DependsOn: HttpRequestLambda
@@ -461,6 +511,42 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ServeImageLambda}"
+      RetentionInDays: 7
+
+  PythonMysqlLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.8
+      Content:
+        S3Bucket: vizzyy-packaging
+        S3Key: pymysql_layer.zip
+      LayerName: pymysql_layer
+
+  ServeMotionLambda:
+    Type: 'AWS::Serverless::Function'
+    DependsOn: PythonMysqlLayer
+    Properties:
+      FunctionName: 'serve-motion'
+      Handler: serve-motion.lambda_handler
+      Runtime: python3.8
+      CodeUri: serve-motion.zip
+      MemorySize: 128
+      Timeout: 30
+      Layers:
+        - !Ref PythonMysqlLayer
+      Role: !Ref s3Credential
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          SSM_PATH: !Ref ssmPath
+          TZ: America/New_York
+
+  ServeMotionLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ServeMotionLambda}"
       RetentionInDays: 7
 
   RedirectLambda:

@@ -2,3 +2,4 @@
 packaged.yml
 samconfig.toml
 scripts/upload_web_src.sh
+*.DS_Store
