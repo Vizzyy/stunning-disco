@@ -38,6 +38,8 @@ Parameters:
     Type: String
   streamsMotionPageUri:
     Type: String
+  alarmTopic:
+    Type: String
 
 Resources:
   StunningDisco:
@@ -490,6 +492,25 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${HttpRequestLambda}"
       RetentionInDays: 7
 
+  HttpRequestLambdaAlarm: # Alarm if 1 bad data point (of >= 1 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '1'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref HttpRequestLambda
+
   ServeImageLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -512,6 +533,25 @@ Resources:
     Properties:
       LogGroupName: !Sub "/aws/lambda/${ServeImageLambda}"
       RetentionInDays: 7
+
+  ServeImageLambdaAlarm: # Alarm if 1 bad data point (of >= 1 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '1'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ServeImageLambda
 
   PythonMysqlLayer:
     Type: AWS::Lambda::LayerVersion
@@ -549,6 +589,25 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${ServeMotionLambda}"
       RetentionInDays: 7
 
+  ServeMotionLambdaAlarm: # Alarm if 1 bad data point (of >= 1 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '1'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ServeMotionLambda
+
   RedirectLambda:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -570,11 +629,11 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${RedirectLambda}"
       RetentionInDays: 7
 
-  StunningDiscoLambdaErrorsAlarm: # Alarm if 1 bad data point (of over 3 errors each) within 5 mins
+  RedirectLambdaAlarm: # Alarm if 1 bad data point (of >= 1 errors each) within 5 mins
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
-        - arn:aws:sns:us-east-1:476889715112:unhealthyHost
+        - !Ref alarmTopic
       ComparisonOperator: GreaterThanOrEqualToThreshold
       DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
       EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
@@ -583,14 +642,8 @@ Resources:
       Period: 60 # seconds between data points
       Statistic: Sum
       Unit: Count
-      Threshold: '3'
+      Threshold: '1'
       TreatMissingData: notBreaching
       Dimensions:
-        - Name: FunctionName1
-          Value: redirect
-        - Name: FunctionName2
-          Value: serve-image
-        - Name: FunctionName3
-          Value: http-request
-        - Name: FunctionName4
-          Value: serve-motion
+        - Name: FunctionName
+          Value: !Ref RedirectLambda
