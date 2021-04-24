@@ -181,19 +181,8 @@ def delete_cfn_resources(debug=False):
 def deploy_sam_resources(debug=False):
     zip_files = zip_lambda_resources()
 
-    print("Packaging SAM resources.")
-    package_cmd = f"sam package --template-file template.yml --s3-bucket vizzyy-packaging " \
-                  f"--output-template-file packaged.yml".split(' ')
-    result = subprocess.run(package_cmd, capture_output=True)
-    if result.returncode != 0:
-        print(result.stderr.decode("utf-8"))
-    elif debug:
-        print(result.stdout.decode("utf-8"))
-    else:
-        print("SAM package successful.")
-
     print("Deploying SAM resources.")
-    deploy_cmd = f"sam deploy --template-file packaged.yml --stack-name {stack_name} " \
+    deploy_cmd = f"sam deploy --resolve-s3 --stack-name {stack_name} " \
                  f"--capabilities CAPABILITY_IAM --no-fail-on-empty-changeset".split(' ')
     result = subprocess.run(deploy_cmd, capture_output=True)
     if result.returncode != 0:
@@ -204,7 +193,6 @@ def deploy_sam_resources(debug=False):
         print("SAM deploy successful.")
 
     delete_lambda_zips(zip_files)
-    os.remove(f"packaged.yml")
 
 
 if __name__ == "__main__":

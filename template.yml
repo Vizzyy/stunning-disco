@@ -570,7 +570,7 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${RedirectLambda}"
       RetentionInDays: 7
 
-  ErrorsAlarm: # Alarm if 1 bad data point (of over 3 errors each) within 5 mins
+  StunningDiscoLambdaErrorsAlarm: # Alarm if 1 bad data point (of over 3 errors each) within 5 mins
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
@@ -582,6 +582,7 @@ Resources:
       Namespace: AWS/Lambda
       Period: 60 # seconds between data points
       Statistic: Sum
+      Unit: Count
       Threshold: '3'
       TreatMissingData: notBreaching
       Dimensions:
@@ -591,3 +592,5 @@ Resources:
           Value: serve-image
         - Name: FunctionName3
           Value: http-request
+        - Name: FunctionName4
+          Value: serve-motion
