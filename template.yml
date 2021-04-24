@@ -89,7 +89,7 @@ Resources:
 
   StunningDiscoDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: [StunningDiscoRootEndpoint, LightsInvokeEndpoint]
+    DependsOn: [StunningDiscoRootEndpoint, LightsProxyResource]
     Properties:
       RestApiId: !Ref StunningDisco
 
@@ -244,22 +244,22 @@ Resources:
         - StatusCode: 200
           ResponseModels: { "text/html": "Empty" }
 
-  DoorToggleResource:
+  DoorProxyResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref DoorResource
-      PathPart: toggle
+      PathPart: "{proxy+}"
       RestApiId: !Ref StunningDisco
 
-  DoorInvokeEndpoint:
+  DoorProxyEndpoint:
     DependsOn: HttpRequestLambda
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref StunningDisco
-      ResourceId: !Ref DoorToggleResource
-      HttpMethod: POST
+      ResourceId: !Ref DoorProxyResource
+      HttpMethod: ANY
       AuthorizationType: NONE
-      OperationName: "Door toggle path by invoking lambda"
+      OperationName: "Door proxy endpoint"
       Integration:
         Type: AWS_PROXY
         Credentials: !Ref s3Credential
@@ -292,6 +292,28 @@ Resources:
         - StatusCode: 200
           ResponseModels: { "text/html": "Empty" }
 
+  LightsProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref LightsResource
+      PathPart: "{proxy+}"
+      RestApiId: !Ref StunningDisco
+
+  LightsProxyEndpoint:
+    DependsOn: HttpRequestLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref LightsProxyResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      OperationName: "Lights proxy endpoint"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
+
   InsideResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -318,22 +340,22 @@ Resources:
         - StatusCode: 200
           ResponseModels: { "text/html": "Empty" }
 
-  InsideArrangeResource:
+  InsideProxyResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref InsideResource
-      PathPart: arrange
+      PathPart: "{proxy+}"
       RestApiId: !Ref StunningDisco
 
-  InsideInvokeEndpoint:
+  InsideProxyEndpoint:
     DependsOn: HttpRequestLambda
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref StunningDisco
-      ResourceId: !Ref InsideArrangeResource
-      HttpMethod: POST
+      ResourceId: !Ref InsideProxyResource
+      HttpMethod: ANY
       AuthorizationType: NONE
-      OperationName: "Inside toggle path by invoking lambda"
+      OperationName: "Inside proxy endpoint"
       Integration:
         Type: AWS_PROXY
         Credentials: !Ref s3Credential
@@ -414,44 +436,22 @@ Resources:
         - StatusCode: 200
           ResponseModels: { "text/html": "Empty" }
 
-  OutsideArrangeResource:
+  OutsideProxyResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref OutsideResource
-      PathPart: arrange
+      PathPart: "{proxy+}"
       RestApiId: !Ref StunningDisco
 
-  OutsideInvokeEndpoint:
+  OutsideProxyEndpoint:
     DependsOn: HttpRequestLambda
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref StunningDisco
-      ResourceId: !Ref OutsideArrangeResource
-      HttpMethod: POST
+      ResourceId: !Ref OutsideProxyResource
+      HttpMethod: ANY
       AuthorizationType: NONE
-      OperationName: "Outside toggle path by invoking lambda"
-      Integration:
-        Type: AWS_PROXY
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "POST"
-        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
-
-  LightsToggleResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref LightsResource
-      PathPart: toggle
-      RestApiId: !Ref StunningDisco
-
-  LightsInvokeEndpoint:
-    DependsOn: HttpRequestLambda
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref LightsToggleResource
-      HttpMethod: POST
-      AuthorizationType: NONE
-      OperationName: "Lights toggle path by invoking lambda"
+      OperationName: "Outside proxy endpoint"
       Integration:
         Type: AWS_PROXY
         Credentials: !Ref s3Credential
@@ -492,7 +492,7 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${HttpRequestLambda}"
       RetentionInDays: 7
 
-  HttpRequestLambdaAlarm: # Alarm if 1 bad data point (of >= 1 errors each) within 5 mins
+  HttpRequestLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
@@ -505,7 +505,7 @@ Resources:
       Period: 60 # seconds between data points
       Statistic: Sum
       Unit: Count
-      Threshold: '1'
+      Threshold: '2'
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -534,7 +534,7 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${ServeImageLambda}"
       RetentionInDays: 7
 
-  ServeImageLambdaAlarm: # Alarm if 1 bad data point (of >= 1 errors each) within 5 mins
+  ServeImageLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
@@ -547,7 +547,7 @@ Resources:
       Period: 60 # seconds between data points
       Statistic: Sum
       Unit: Count
-      Threshold: '1'
+      Threshold: '2'
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -589,7 +589,7 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${ServeMotionLambda}"
       RetentionInDays: 7
 
-  ServeMotionLambdaAlarm: # Alarm if 1 bad data point (of >= 1 errors each) within 5 mins
+  ServeMotionLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
@@ -602,7 +602,7 @@ Resources:
       Period: 60 # seconds between data points
       Statistic: Sum
       Unit: Count
-      Threshold: '1'
+      Threshold: '2'
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName
@@ -629,7 +629,7 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${RedirectLambda}"
       RetentionInDays: 7
 
-  RedirectLambdaAlarm: # Alarm if 1 bad data point (of >= 1 errors each) within 5 mins
+  RedirectLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
@@ -642,7 +642,7 @@ Resources:
       Period: 60 # seconds between data points
       Statistic: Sum
       Unit: Count
-      Threshold: '1'
+      Threshold: '2'
       TreatMissingData: notBreaching
       Dimensions:
         - Name: FunctionName

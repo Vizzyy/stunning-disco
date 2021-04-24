@@ -1,43 +1,43 @@
 import base64
 import datetime
 import json
-
 import boto3
 import os
 import urllib3
-
-# Setup outside of handler so it only executes once per container
 from urllib3 import Retry
 from urllib3.exceptions import MaxRetryError
 
 ssm = boto3.client('ssm')
 sqs = boto3.client('sqs')
-
 paginator = ssm.get_paginator('get_parameters_by_path')
 iterator = paginator.paginate(Path=os.environ.get('SSM_PATH'), WithDecryption=True)
 params = []
+file_dir = "/tmp"
 
 for page in iterator:
     params.extend(page['Parameters'])
     for param in page.get('Parameters', []):
         # Load all SSM params into environment
         os.environ[param.get('Name').split('/')[-1]] = param.get('Value')
-        # print(param.get('Value'))
 
 # Write SSL client cert/key into container
-with open('/tmp/lambda-cert', 'w') as file:
+with open(f'{file_dir}/lambda-cert.crt', 'w') as file:
     file.write(os.environ["lambda-cert"])
 
-with open('/tmp/lambda-key', 'w') as file:
+with open(f'{file_dir}/lambda-key.crt', 'w') as file:
     file.write(os.environ["lambda-key"])
 
-with open('/tmp/db-cert', 'w') as file:
+with open(f'{file_dir}/db-cert.crt', 'w') as file:
     file.write(os.environ["db-cert"])
 
+secrets = json.loads(os.environ.get('secrets'))
+proxy_host = secrets["HUB_HOST"]
+print(f"proxy_host: {proxy_host}")
+
 conn = urllib3.connection_from_url(
-    os.environ.get('lambda-availability-host'),
-    cert_file='/tmp/lambda-cert',
-    key_file='/tmp/lambda-key'
+    f'https://{proxy_host}',
+    cert_file=f'{file_dir}/lambda-cert.crt',
+    key_file=f'{file_dir}/lambda-key.crt'
 )
 
 
@@ -46,7 +46,8 @@ def sqs_send(start_time: datetime, target_route: str, success: bool = True):
     now = datetime.datetime.now()
     elapsed = now - start_time
     elapsed_ms = elapsed.total_seconds() * 1000  # elapsed milliseconds
-    path = target_route.split(".com")[1]
+    full_path = target_route.split(proxy_host)[1].split('?')[0].split('/')
+    path = f"/{full_path[0]}/{full_path[1]}"
 
     message = {
         "action": "insert",
@@ -69,60 +70,59 @@ def sqs_send(start_time: datetime, target_route: str, success: bool = True):
 
 def lambda_handler(event=None, context=None):
     start_time = datetime.datetime.now()
+    target_route = f'https://{proxy_host}'
+
     try:
         print("Event:")
         print(event)
-        body = base64.b64decode(event["body"]).decode('utf-8')
-        print(f"Body: {body}")
 
-        query_params = body.split("&")
-        param_map = {}
-        for key_val in query_params:
-            query_param = key_val.split("=")
-            param_map[str(query_param[0])] = str(query_param[1])
+        method = event["httpMethod"]
+        body = event["body"]
+        query_params = event["queryStringParameters"]
+        path = event["path"]
+        body_params = {}
+        query_param_string = ""
 
-        target_route = f"{os.environ.get('lambda-availability-host')}"
-        method = "POST"
+        if body is not None:
+            body = base64.b64decode(body).decode('utf-8')
+            print(f"Body: {body}")
+            temp_params = body.split("&")
+            for key_val in temp_params:
+                temp_params = key_val.split("=")
+                body_params[str(temp_params[0])] = str(temp_params[1])
 
-        if "light" in param_map.keys():
-            target_route = f"{target_route}/lights"
-            if param_map["light"] == "2":
-                target_route += "/bedroom/lamp"
-            elif param_map["light"] == "1":
-                target_route += "/bedroom/xmas"
-            elif param_map["light"] == "3":
-                target_route += "/strip/inside"
-            elif param_map["light"] == "4":
-                target_route += "/strip/outside"
-        else:
-            target_route = f"{target_route}/door/{param_map['status']}"
-            method = "GET"
+        if query_params is not None:
+            query_param_string += "?"
+            query_param_array = []
+            for key in query_params.keys():
+                query_param_array.append(f"{key}={query_params[key]}")
+            query_param_string += "&".join(query_param_array)
 
-        print(f"Checking route: {target_route} by method: {method}")
-        print(param_map)
-        print(param_map["status"])
+        target_route += path + query_param_string
 
-        response = conn.request_encode_body(method, target_route, fields=param_map, encode_multipart=False,
+        print(f"Checking route: {target_route} by method: {method}, body_params: {body_params}")
+
+        response = conn.request_encode_body(method, target_route, fields=body_params, encode_multipart=False,
                                             timeout=5.0, retries=Retry(total=3))
     except MaxRetryError as max_e:
         print(f"Could not establish connection to hub: {max_e}")
         sqs_send(start_time, target_route, False)
-        raise RuntimeError
+        raise
     except Exception as e:
         print(f"Unknown error making request: {e}")
         sqs_send(start_time, target_route, False)
-        raise RuntimeError
+        raise
 
     result = {
         'statusCode': response.status,
-        'body': str(response.data),
+        'body': str(response.data.decode('utf-8')),
         'isBase64Encoded': False,
         'headers': {
             "Content-Type": "application/json"
         }
     }
 
-    print(f"Result status: {result['statusCode']}")
+    print(f"Result: {result}")
 
     if result['statusCode'] != 200:
         print("Encountered Server Error.")
@@ -137,10 +137,28 @@ def lambda_handler(event=None, context=None):
 
 if os.environ.get('ENV') == "dev":
     # Run natively during development
-    event = {'resource': '/lights/toggle', 'path': '/lights/toggle', 'httpMethod': 'POST',
-             'body': 'light=1&status=false', 'isBase64Encoded': False}
+    lights_two_off = {
+        "resource": "/lights/{proxy+}",
+        "path": "/lights/light3",
+        "httpMethod": "GET",
+        "headers": {
+            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "accept-encoding": "gzip, deflate, br",
+            "accept-language": "en-US,en;q=0.5",
+            "dnt": "1",
+            "sec-gpc": "1",
+            "te": "trailers",
+            "upgrade-insecure-requests": "1",
+        },
+        "queryStringParameters": {
+            "status": "False"
+        },
+        "pathParameters": {
+            "proxy": "light1"
+        },
+        "stageVariables": None,
+        "body": None,
+        "isBase64Encoded": False
+    }
 
-    event2 = {'resource': '/door/toggle', 'path': '/door/toggle', 'httpMethod': 'POST',
-              'body': 'status=open&entry=OPENED%3A+OVERRIDE+BY+UI', 'isBase64Encoded': False}
-
-    lambda_handler(event)
+    lambda_handler(lights_two_off)

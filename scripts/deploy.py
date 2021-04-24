@@ -187,7 +187,8 @@ def deploy_sam_resources(debug=False):
     result = subprocess.run(deploy_cmd, capture_output=True)
     if result.returncode != 0:
         print(result.stderr.decode("utf-8"))
-    elif debug:
+        raise RuntimeError
+    if debug:
         print(result.stdout.decode("utf-8"))
     else:
         print("SAM deploy successful.")

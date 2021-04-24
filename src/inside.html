@@ -11,34 +11,19 @@
             <h1> INSIDE </h1>
     
             <div>
-                <form action="/inside/arrange" target="dummyframe" method="post">
-                    <input type="hidden" name="light" value="3" />
-                    <input type="hidden" name="status" value="clear" />
+                <form action="/inside/arrange/clear" target="dummyframe" method="get">
                     <br><input type="submit" value="CLEAR">
                 </form>
-                <form action="/inside/arrange" target="dummyframe" method="post">
-                    <input type="hidden" name="light" value="3" />
-                    <input type="hidden" name="status" value="white" />
+                <form action="/inside/arrange/wipeWhite" target="dummyframe" method="get">
                     <br><input type="submit" value="WHITE">
                 </form>
-                <form action="/inside/arrange" target="dummyframe" method="post">
-                    <input type="hidden" name="light" value="3" />
-                    <input type="hidden" name="status" value="green" />
-                    <br><input type="submit" value="GREEN">
+                <form action="/inside/arrange/twilight" target="dummyframe" method="get">
+                    <br><input type="submit" value="twilight">
                 </form>
-                <form action="/inside/arrange" target="dummyframe" method="post">
-                    <input type="hidden" name="light" value="3" />
-                    <input type="hidden" name="status" value="blue" />
-                    <br><input type="submit" value="BLUE">
+                <form action="/inside/arrange/rainbow" target="dummyframe" method="get">
+                    <br><input type="submit" value="rainbow2">
                 </form>
-                <form action="/inside/arrange" target="dummyframe" method="post">
-                    <input type="hidden" name="light" value="3" />
-                    <input type="hidden" name="status" value="red" />
-                    <br><input type="submit" value="RED">
-                </form>
-                <form action="/inside/arrange" target="dummyframe" method="post">
-                    <input type="hidden" name="light" value="3" />
-                    <input type="hidden" name="status" value="rainbowCycle" />
+                <form action="/inside/arrange/rainbowCycle" target="dummyframe" method="get">
                     <br><input type="submit" value="rainbowCycle">
                 </form>
                 <form action="/inside/custom">
