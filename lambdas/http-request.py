@@ -47,6 +47,8 @@ def sqs_send(start_time: datetime, target_route: str, success: bool = True):
     elapsed = now - start_time
     elapsed_ms = elapsed.total_seconds() * 1000  # elapsed milliseconds
     full_path = target_route.split(proxy_host)[1].split('?')[0].split('/')
+    full_path = [x for x in full_path if x]
+    print(full_path)
     path = f"/{full_path[0]}/{full_path[1]}"
 
     message = {
@@ -137,9 +139,9 @@ def lambda_handler(event=None, context=None):
 
 if os.environ.get('ENV') == "dev":
     # Run natively during development
-    lights_two_off = {
+    lights_two = {
         "resource": "/lights/{proxy+}",
-        "path": "/lights/light3",
+        "path": "/lights/light2",
         "httpMethod": "GET",
         "headers": {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -151,7 +153,7 @@ if os.environ.get('ENV') == "dev":
             "upgrade-insecure-requests": "1",
         },
         "queryStringParameters": {
-            "status": "False"
+            "status": "true"
         },
         "pathParameters": {
             "proxy": "light1"
@@ -161,4 +163,4 @@ if os.environ.get('ENV') == "dev":
         "isBase64Encoded": False
     }
 
-    lambda_handler(lights_two_off)
+    lambda_handler(lights_two)
