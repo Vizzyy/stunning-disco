@@ -33,12 +33,12 @@ def arguments():
 
 
 def deploy_web_resource(debug=False):
-    web_src_files = glob.glob(f'src/*')
+    web_src_files = glob.glob(f'web_src/*')
     for file_path in web_src_files:
         file_name = file_path.split('/')[-1]
         s3_client.upload_file(file_path, web_src_bucket, file_name)
         if debug:
-            print(f"Deployed resource with path: {file_path}, name: {file_name}")
+            print(f"Deployed resource: {file_path} >> s3://{web_src_bucket}/{file_name}")
     print("Web resources uploaded.")
 
 
@@ -76,17 +76,6 @@ def deploy_lambda_layers(debug=False):
         shutil.make_archive(result_zip, 'zip', f"{layer}")
         s3_client.upload_file(f"{result_zip}.zip", "vizzyy-packaging", f"{result_zip}.zip")
         shutil.rmtree(f"{layer}/python")
-
-        # file_bytes = open(f"{result_zip}.zip", 'rb').read()
-        # response = lambda_client.publish_layer_version(
-        #     LayerName=result_zip,
-        #     Description=result_zip,
-        #     Content={
-        #         'ZipFile': file_bytes
-        #     },
-        #     CompatibleRuntimes=['python3.8'],
-        # )
-        # if debug: print(response)
 
         print(f"Successfully deployed {result_zip}.")
         os.remove(f"{result_zip}.zip")
