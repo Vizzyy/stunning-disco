@@ -23,3 +23,11 @@ input {
 body {
   background-color: deepskyblue;
 }
+
+iframe[seamless] {
+  border: none;
+}
+
+#navbar {
+  width:100%;
+}

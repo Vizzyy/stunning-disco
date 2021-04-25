@@ -40,6 +40,8 @@ Parameters:
     Type: String
   alarmTopic:
     Type: String
+  navBarUri:
+    Type: String
 
 Resources:
   StunningDisco:
@@ -116,6 +118,32 @@ Resources:
         Credentials: !Ref s3Credential
         IntegrationHttpMethod: "GET"
         Uri: !Ref rootEndpointUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  NavResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: navbar
+      RestApiId: !Ref StunningDisco
+
+  NavResourceEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref NavResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Nav bar resource path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref navBarUri
         IntegrationResponses:
           - StatusCode: 200
       MethodResponses:
