@@ -3,6 +3,7 @@ import datetime
 import json
 import boto3
 import os
+import urllib.parse
 import urllib3
 from urllib3 import Retry
 from urllib3.exceptions import MaxRetryError
@@ -48,8 +49,7 @@ def sqs_send(start_time: datetime, target_route: str, success: bool = True):
     elapsed_ms = elapsed.total_seconds() * 1000  # elapsed milliseconds
     full_path = target_route.split(proxy_host)[1].split('?')[0].split('/')
     full_path = [x for x in full_path if x]
-    print(full_path)
-    path = f"/{full_path[0]}/{full_path[1]}"
+    path = f"api/{full_path[0]}/{full_path[1]}"
 
     message = {
         "action": "insert",
@@ -75,7 +75,6 @@ def lambda_handler(event=None, context=None):
     target_route = f'https://{proxy_host}'
 
     try:
-        print("Event:")
         print(event)
 
         method = event["httpMethod"]
@@ -86,21 +85,12 @@ def lambda_handler(event=None, context=None):
         query_param_string = ""
 
         if body is not None:
-            body = base64.b64decode(body).decode('utf-8')
-            print(f"Body: {body}")
-            temp_params = body.split("&")
-            for key_val in temp_params:
-                temp_params = key_val.split("=")
-                body_params[str(temp_params[0])] = str(temp_params[1])
+            body_params = urllib.parse.parse_qs(base64.b64decode(body).decode('utf-8'))
 
         if query_params is not None:
-            query_param_string += "?"
-            query_param_array = []
-            for key in query_params.keys():
-                query_param_array.append(f"{key}={query_params[key]}")
-            query_param_string += "&".join(query_param_array)
+            query_param_string += urllib.parse.urlencode(query_params)
 
-        target_route += path + query_param_string
+        target_route += path + "?" + query_param_string
 
         print(f"Checking route: {target_route} by method: {method}, body_params: {body_params}")
 
@@ -141,20 +131,9 @@ if os.environ.get('ENV') == "dev":
     # Run natively during development
     lights_two = {
         "resource": "/lights/{proxy+}",
-        "path": "/lights/light2",
+        "path": '/inside/custom',
         "httpMethod": "GET",
-        "headers": {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            "accept-encoding": "gzip, deflate, br",
-            "accept-language": "en-US,en;q=0.5",
-            "dnt": "1",
-            "sec-gpc": "1",
-            "te": "trailers",
-            "upgrade-insecure-requests": "1",
-        },
-        "queryStringParameters": {
-            "status": "true"
-        },
+        "queryStringParameters": {'colorValue': '#000000'},
         "pathParameters": {
             "proxy": "light1"
         },

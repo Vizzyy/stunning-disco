@@ -42,6 +42,10 @@ Parameters:
     Type: String
   navBarUri:
     Type: String
+  insideCustomPageUri:
+    Type: String
+  outsideCustomPageUri:
+    Type: String
 
 Resources:
   StunningDisco:
@@ -390,54 +394,6 @@ Resources:
         IntegrationHttpMethod: "POST"
         Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
 
-  FaviconResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: favicon.ico
-      RestApiId: !Ref StunningDisco
-
-  FaviconEndpoint:
-    DependsOn: ServeImageLambda
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref FaviconResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      OperationName: "Serve image by invoking lambda"
-      Integration:
-        Type: AWS_PROXY
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: POST # needs to be POST
-        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ServeImageLambda.Arn}/invocations # ARN
-
-  StylesheetResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: style.css
-      RestApiId: !Ref StunningDisco
-
-  StylesheetEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref StylesheetResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Stylesheet path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref stylesheetUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/css": "Empty" }
-
   OutsideResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -485,6 +441,113 @@ Resources:
         Credentials: !Ref s3Credential
         IntegrationHttpMethod: "POST"
         Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
+
+  CustomResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: custom
+      RestApiId: !Ref StunningDisco
+
+  CustomInsideResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref CustomResource
+      PathPart: inside
+      RestApiId: !Ref StunningDisco
+
+  CustomInsidePageEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref CustomInsideResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Inside custom path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref insideCustomPageUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  CustomOutsideResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref CustomResource
+      PathPart: outside
+      RestApiId: !Ref StunningDisco
+
+  CustomOutsidePageEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref CustomOutsideResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Outside custom path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref outsideCustomPageUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  FaviconResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: favicon.ico
+      RestApiId: !Ref StunningDisco
+
+  FaviconEndpoint:
+    DependsOn: ServeImageLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref FaviconResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      OperationName: "Serve image by invoking lambda"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: POST # needs to be POST
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ServeImageLambda.Arn}/invocations # ARN
+
+  StylesheetResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: style.css
+      RestApiId: !Ref StunningDisco
+
+  StylesheetEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StylesheetResource
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Stylesheet path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref stylesheetUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/css": "Empty" }
 
   HttpRequestLambda:
     Type: 'AWS::Serverless::Function'
