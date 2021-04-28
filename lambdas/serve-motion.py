@@ -3,8 +3,10 @@ import json
 import os
 import boto3 as boto3
 import pymysql
+from botocore.exceptions import ClientError
 
 ssm = boto3.client('ssm')
+s3_client = boto3.client('s3')
 paginator = ssm.get_paginator('get_parameters_by_path')
 iterator = paginator.paginate(Path=os.environ.get('SSM_PATH'), WithDecryption=True)
 params = []
@@ -32,6 +34,18 @@ cursor = db.cursor()
 print("DB connection initiated.")
 
 
+def create_signed_url(object_name, expiration=60):
+    try:
+        request_params = {
+            'Bucket': "vizzyy-motion-events",
+            'Key': f"{object_name}.gif"
+        }
+        return s3_client.generate_presigned_url('get_object', Params=request_params, ExpiresIn=expiration)
+    except ClientError as e:
+        print(e)
+        raise
+
+
 def lambda_handler(event=None, context=None):
     print(f"Event: {event}")
 
@@ -48,18 +62,16 @@ def lambda_handler(event=None, context=None):
     cursor.execute(sql)
     results = cursor.fetchone()
 
-    image_blob = results["Image"]
-    encoded_image = base64.b64encode(image_blob).decode('utf-8')
-    print(f"image_blob size: {len(image_blob)}, encoded_image size: {len(encoded_image)}")
-    # len of encoded_image like 100 bytes needs to be < 6291556 bytes
+    asset_name = results["Time"]
+    signed_url = create_signed_url(asset_name)
 
     result = {
         'statusCode': 200,
-        'isBase64Encoded': True,
+        'isBase64Encoded': False,
         'headers': {
             'Content-Type': 'image/gif'
         },
-        'body': encoded_image,
+        'body': signed_url,
     }
 
     return result
@@ -67,17 +79,10 @@ def lambda_handler(event=None, context=None):
 
 if os.environ.get('ENV') == "dev":
 
-    offset_param = 1
+    offset_param = 0
 
     test_event = {
         'resource': '/streams/motion/blob', 'path': '/streams/motion/blob', 'httpMethod': 'GET',
-        'headers': {
-            'accept': 'image/webp,*/*', 'accept-encoding': 'gzip, deflate, br',
-            'accept-language': 'en-US,en;q=0.5', 'dnt': '1', 'Host': 'something',
-            'referer': 'https://something/streams/motion?', 'sec-gpc': '1', 'te': 'trailers',
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:87.0) Gecko/20100101 Firefox/87.0',
-            'X-Forwarded-For': '0.0.0.0'
-        },
         'queryStringParameters': {
             'offset': f'{offset_param}'
         },
@@ -86,5 +91,4 @@ if os.environ.get('ENV') == "dev":
     }
 
     response = lambda_handler(test_event)
-    response["body"] = response["body"][0:90]
     print(response)
