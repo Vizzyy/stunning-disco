@@ -95,7 +95,10 @@ Resources:
 
   StunningDiscoDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn: [StunningDiscoRootEndpoint, LightsProxyResource]
+    DependsOn:
+      - StunningDiscoRootEndpoint
+      - LightsProxyResource
+      - CustomResource
     Properties:
       RestApiId: !Ref StunningDisco
 
