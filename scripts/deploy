@@ -57,7 +57,7 @@ def zip_lambda_resources(debug=False):
 
 
 def deploy_lambda_layers(debug=False):
-    lambda_layers = glob.glob(f'layers/*lambda.py')
+    lambda_layers = glob.glob(f'layers/*')
     print(f"Packaging lambda layers: {lambda_layers}")
     for layer in lambda_layers:
         layer_name = layer.split('/')[-1]
