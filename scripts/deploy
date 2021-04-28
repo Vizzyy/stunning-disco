@@ -174,11 +174,11 @@ def deploy_sam_resources(debug=False):
     deploy_cmd = f"sam deploy --resolve-s3 --stack-name {stack_name} " \
                  f"--capabilities CAPABILITY_IAM --no-fail-on-empty-changeset".split(' ')
     result = subprocess.run(deploy_cmd, capture_output=True)
-    if result.returncode != 0:
-        print(result.stderr.decode("utf-8"))
-        raise RuntimeError
     if debug:
         print(result.stdout.decode("utf-8"))
+    if result.returncode != 0:
+        print(result.stderr.decode("utf-8"))
+        raise RuntimeError("Unsuccessful SAM deployment.")
     else:
         print("SAM deploy successful.")
 
