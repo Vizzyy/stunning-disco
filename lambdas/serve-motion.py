@@ -1,33 +1,28 @@
-import base64
 import json
 import os
 import boto3 as boto3
 import pymysql
+import sys
 from botocore.exceptions import ClientError
 
-ssm = boto3.client('ssm')
+if os.environ.get('ENV') == "dev":
+    # These modules are imported as Lambda Layers in prod
+    # So we emulate something similar in development
+    sys.path.insert(1, '../layers/sqs_module')
+    sys.path.insert(1, '../layers/ssm_module')
+
+from sqs_module import *
+from ssm_module import *
+
 s3_client = boto3.client('s3')
-paginator = ssm.get_paginator('get_parameters_by_path')
-iterator = paginator.paginate(Path=os.environ.get('SSM_PATH'), WithDecryption=True)
-params = []
-
-for page in iterator:
-    params.extend(page['Parameters'])
-    for param in page.get('Parameters', []):
-        # Load all SSM params into environment
-        os.environ[param.get('Name').split('/')[-1]] = param.get('Value')
-
 SECRETS = json.loads(os.environ["secrets"])
-
-with open('/tmp/db-cert', 'w') as file:
-    file.write(os.environ["db-cert"])
 
 db = pymysql.connect(host=SECRETS["HUB_HOST"],
                      user=SECRETS["database"]["DB_USER"],
                      password=SECRETS["database"]["DB_PASS"],
                      database=SECRETS["database"]["DB_USER"],
                      port=SECRETS["database"]["DB_PORT"],
-                     ssl_ca='/tmp/db-cert',
+                     ssl_ca='/tmp/db-cert.crt',
                      cursorclass=pymysql.cursors.DictCursor)
 
 cursor = db.cursor()

@@ -1,7 +1,6 @@
 import base64
 import datetime
 import json
-import boto3
 import os
 import urllib.parse
 import sys
@@ -10,43 +9,22 @@ from urllib3 import Retry
 from urllib3.exceptions import MaxRetryError
 
 if os.environ.get('ENV') == "dev":
-    # This module is imported as a Lambda Layer in prod
+    # These modules are imported as Lambda Layers in prod
     # So we emulate something similar in development
     sys.path.insert(1, '../layers/sqs_module')
+    sys.path.insert(1, '../layers/ssm_module')
+
 from sqs_module import *
-
-ssm = boto3.client('ssm')
-sqs = boto3.client('sqs')
-paginator = ssm.get_paginator('get_parameters_by_path')
-iterator = paginator.paginate(Path=os.environ.get('SSM_PATH'), WithDecryption=True)
-params = []
-file_dir = "/tmp"
-
-for page in iterator:
-    params.extend(page['Parameters'])
-    for param in page.get('Parameters', []):
-        # Load all SSM params into environment
-        os.environ[param.get('Name').split('/')[-1]] = param.get('Value')
-
-# Write SSL client cert/key into container
-with open(f'{file_dir}/lambda-cert.crt', 'w') as file:
-    file.write(os.environ["lambda-cert"])
-
-with open(f'{file_dir}/lambda-key.crt', 'w') as file:
-    file.write(os.environ["lambda-key"])
-
-with open(f'{file_dir}/db-cert.crt', 'w') as file:
-    file.write(os.environ["db-cert"])
+from ssm_module import *
 
 secrets = json.loads(os.environ.get('secrets'))
 proxy_host = secrets["HUB_HOST"]
 sqs_queue = os.environ["queue-url"]
-print(f"proxy_host: {proxy_host}")
 
 conn = urllib3.connection_from_url(
     f'https://{proxy_host}',
-    cert_file=f'{file_dir}/lambda-cert.crt',
-    key_file=f'{file_dir}/lambda-key.crt'
+    cert_file=f'/tmp/lambda-cert.crt',
+    key_file=f'/tmp/lambda-key.crt'
 )
 
 
@@ -72,7 +50,7 @@ def lambda_handler(event=None, context=None):
 
         target_route += path + "?" + query_param_string
 
-        print(f"Checking route: {target_route} by method: {method}, body_params: {body_params}")
+        print(f"Checking route: {target_route}, by method: {method}, with body_params: {body_params}")
 
         response = conn.request_encode_body(method, target_route, fields=body_params, encode_multipart=False,
                                             timeout=5.0, retries=Retry(total=3))
@@ -109,11 +87,11 @@ def lambda_handler(event=None, context=None):
 
 if os.environ.get('ENV') == "dev":
     # Run natively during development
-    lights_two = {
+    event = {
         "resource": "/lights/{proxy+}",
-        "path": '/inside/custom',
+        "path": "/inside/custom",
         "httpMethod": "GET",
-        "queryStringParameters": {'colorValue': '#000000'},
+        "queryStringParameters": {"colorValue": "#FFFFFF"},
         "pathParameters": {
             "proxy": "light1"
         },
@@ -122,4 +100,4 @@ if os.environ.get('ENV') == "dev":
         "isBase64Encoded": False
     }
 
-    lambda_handler(lights_two)
+    lambda_handler(event)

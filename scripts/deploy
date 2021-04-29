@@ -67,10 +67,10 @@ def deploy_lambda_layers(debug=False):
         # If this is a custom layer there will be a python file
         if os.path.exists(f'{layer}/{layer_name}.py'):
             shutil.copy(f'{layer}/{layer_name}.py', f"{layer}/python")
-        # Else if this is a standard python package there's just a placeholder
+        # Else it is a standard python/pip package
         else:
-            package_cmd = f"python3 -m pip install -t {layer}/python {layer_name}".split(' ')
-            result = subprocess.run(package_cmd, capture_output=True)
+            package_cmd = f"python3 -m pip --disable-pip-version-check install -t {layer}/python {layer_name}"
+            result = subprocess.run(package_cmd.split(' '), capture_output=True)
             if result.returncode != 0 or result.stderr:
                 print(result.stderr.decode("utf-8"))
             elif debug:
