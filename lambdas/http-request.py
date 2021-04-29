@@ -4,9 +4,16 @@ import json
 import boto3
 import os
 import urllib.parse
+import sys
 import urllib3
 from urllib3 import Retry
 from urllib3.exceptions import MaxRetryError
+
+if os.environ.get('ENV') == "dev":
+    # This module is imported as a Lambda Layer in prod
+    # So we emulate something similar in development
+    sys.path.insert(1, '../layers/sqs_module')
+from sqs_module import *
 
 ssm = boto3.client('ssm')
 sqs = boto3.client('sqs')
@@ -33,6 +40,7 @@ with open(f'{file_dir}/db-cert.crt', 'w') as file:
 
 secrets = json.loads(os.environ.get('secrets'))
 proxy_host = secrets["HUB_HOST"]
+sqs_queue = os.environ["queue-url"]
 print(f"proxy_host: {proxy_host}")
 
 conn = urllib3.connection_from_url(
@@ -40,34 +48,6 @@ conn = urllib3.connection_from_url(
     cert_file=f'{file_dir}/lambda-cert.crt',
     key_file=f'{file_dir}/lambda-key.crt'
 )
-
-
-def sqs_send(start_time: datetime, target_route: str, success: bool = True):
-    queue_url = os.environ["queue-url"]
-    now = datetime.datetime.now()
-    elapsed = now - start_time
-    elapsed_ms = elapsed.total_seconds() * 1000  # elapsed milliseconds
-    full_path = target_route.split(proxy_host)[1].split('?')[0].split('/')
-    full_path = [x for x in full_path if x]
-    path = f"api/{full_path[0]}/{full_path[1]}"
-
-    message = {
-        "action": "insert",
-        "table": "canary_metrics",
-        "values": {
-            "path": path,
-            "ms_elapsed": elapsed_ms,
-            "timestamp": now.__str__(),
-            "success": success
-        }
-    }
-
-    # Send message to SQS queue
-    print("Pushing message to queue...")
-    response = sqs.send_message(QueueUrl=queue_url, MessageBody=(json.dumps(message)))
-    print(message)
-    if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-        raise RuntimeError("Could not enqueue message!")
 
 
 def lambda_handler(event=None, context=None):
@@ -98,11 +78,11 @@ def lambda_handler(event=None, context=None):
                                             timeout=5.0, retries=Retry(total=3))
     except MaxRetryError as max_e:
         print(f"Could not establish connection to hub: {max_e}")
-        sqs_send(start_time, target_route, False)
+        sqs_send(sqs_queue, proxy_host, start_time, target_route, False)
         raise
     except Exception as e:
         print(f"Unknown error making request: {e}")
-        sqs_send(start_time, target_route, False)
+        sqs_send(sqs_queue, proxy_host, start_time, target_route, False)
         raise
 
     result = {
@@ -119,10 +99,10 @@ def lambda_handler(event=None, context=None):
     if result['statusCode'] != 200:
         print("Encountered Server Error.")
         print(vars(response))
-        sqs_send(start_time, target_route, False)
+        sqs_send(sqs_queue, proxy_host, start_time, target_route, False)
         raise RuntimeError
 
-    sqs_send(start_time, target_route, True)
+    sqs_send(sqs_queue, proxy_host, start_time, target_route, True)
 
     return result
 

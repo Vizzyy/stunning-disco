@@ -61,18 +61,23 @@ def deploy_lambda_layers(debug=False):
     print(f"Packaging lambda layers: {lambda_layers}")
     for layer in lambda_layers:
         layer_name = layer.split('/')[-1]
-
+        result_zip = f"{layer_name}_layer"
         os.mkdir(f"{layer}/python")
 
-        package_cmd = f"python3 -m pip install -t {layer}/python {layer_name}".split(' ')
-        result = subprocess.run(package_cmd, capture_output=True)
-        if result.returncode != 0 or result.stderr:
-            print(result.stderr.decode("utf-8"))
-        elif debug:
-            print(result.stdout.decode("utf-8"))
+        # If this is a custom layer there will be a python file
+        if os.path.exists(f'{layer}/{layer_name}.py'):
+            shutil.copy(f'{layer}/{layer_name}.py', f"{layer}/python")
+        # Else if this is a standard python package there's just a placeholder
+        else:
+            package_cmd = f"python3 -m pip install -t {layer}/python {layer_name}".split(' ')
+            result = subprocess.run(package_cmd, capture_output=True)
+            if result.returncode != 0 or result.stderr:
+                print(result.stderr.decode("utf-8"))
+            elif debug:
+                print(result.stdout.decode("utf-8"))
+
         print(f"Successfully packaged {layer}.")
 
-        result_zip = f"{layer_name}_layer"
         shutil.make_archive(result_zip, 'zip', f"{layer}")
         s3_client.upload_file(f"{result_zip}.zip", "vizzyy-packaging", f"{result_zip}.zip")
         shutil.rmtree(f"{layer}/python")

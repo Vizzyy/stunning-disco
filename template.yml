@@ -554,6 +554,7 @@ Resources:
 
   HttpRequestLambda:
     Type: 'AWS::Serverless::Function'
+    DependsOn: PythonSqsModuleLayer
     Properties:
       FunctionName: 'http-request'
       Handler: http-request.lambda_handler
@@ -579,6 +580,8 @@ Resources:
         Variables:
           SSM_PATH: !Ref ssmPath
           TZ: America/New_York
+      Layers:
+        - !Ref PythonSqsModuleLayer
 
   HttpRequestLambdaLogGroup:
     Type: AWS::Logs::LogGroup
@@ -656,6 +659,16 @@ Resources:
         S3Bucket: vizzyy-packaging
         S3Key: pymysql_layer.zip
       LayerName: pymysql_layer
+
+  PythonSqsModuleLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.8
+      Content:
+        S3Bucket: vizzyy-packaging
+        S3Key: sqs_module_layer.zip
+      LayerName: sqs_module_layer
 
   ServeMotionLambda:
     Type: 'AWS::Serverless::Function'
