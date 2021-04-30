@@ -1,55 +1,41 @@
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
     <title>Home</title>
 </head>
 <body>
-<div align="center">
-    <iframe id="navbar" src="/navbar" seamless></iframe>
-    <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe" style="width:0; height:0; border:none"></iframe>
+    <iframe src="navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
 
-    <div class="column">
-        <div class = row>
-            <br><br><br><br>
-        </div>
-        <div class = row>
-            <form action="/streams" >
-                <br><input type="submit" value="VIDEO">
+    <div class="flex-column">
+        <div class="flex-row"></div>
+        <div class="flex-row">
+            <form action="/streams">
+                <input class="generalButton" type="submit" value="VIDEO">
             </form>
-        </div>
-        <div class = row>
-            <form action="/door" >
-                <br><input type="submit" value="DOOR">
-            </form>
-        </div>
-        <div class = row>
-            <form action="/streams/motion" >
-                <br><input type="submit" value="MOTION">
-            </form>
-        </div>
-    </div>
-    <div class = column>
-        <div class = row>
-            <br><br><br><br>
-        </div>
-        <div class = row>
             <form action="/lights">
-                <br><input type="submit" value="LIGHTS">
+                <input class="generalButton" type="submit" value="LIGHTS">
             </form>
         </div>
-        <div class = row>
+        <div class="flex-row">
+            <form action="/door">
+                <input class="generalButton" type="submit" value="DOOR">
+            </form>
             <form action="/inside">
-                <br><input type="submit" value="INSIDE">
+                <input class="generalButton" type="submit" value="INSIDE">
             </form>
         </div>
-        <div class = row>
-            <form action="/outside" >
-                <br><input type="submit" value="OUTSIDE">
+        <div class="flex-row">
+            <form action="/streams/motion">
+                <input class="generalButton" type="submit" value="MOTION">
+            </form>
+            <form action="/outside">
+                <input class="generalButton" type="submit" value="OUTSIDE">
             </form>
         </div>
+
     </div>
-</div>
+
 </body>
 
 </html>

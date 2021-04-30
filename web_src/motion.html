@@ -1,22 +1,17 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="/style.css">
     <title>STREAMS</title>
 </head>
-<body style="background-color:deepskyblue">
-    <iframe id="navbar" src="/navbar" seamless></iframe>
-
-    <div align="center">
-        <div id="image"></div>
-        <br><br>
-
-        <div style="float: left;width:50%;">
-            <input type="submit" value="Previous" height="70" style="width: 50%;" onclick="previous()">
-        </div>
-        <div style="float: right;width:50%;">
-            <input type="submit" value="Next" height="70" style="width: 50%;" onclick="next()">
+<body>
+    <iframe src="/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+    <div class="flex-column">
+        <div class="flex-row"><div id="image" ></div></div>
+        <div class="flex-row"> </div>
+        <div class="flex-row">
+            <input type="submit" value="Previous" class="generalButton" onclick="previous()">
+            <input type="submit" value="Next" class="generalButton" onclick="next()">
         </div>
     </div>
 </body>
@@ -40,7 +35,7 @@
         document.getElementById("image").innerHTML = "<div class=\"loader\"></div>";
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-                document.getElementById("image").innerHTML = "<img style=\"width: 95vw; height: auto;\" src=\""+this.response+"\">";
+                document.getElementById("image").innerHTML = "<img class=\"motionImage\" src=\""+this.response+"\">";
             }
         };
         xhttp.open("GET", path, true);

@@ -1,37 +1,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
     <title>Inside</title>
 </head>
-<body style="background-color:deepskyblue;">
+<body>
     <div align="center">
-        <iframe id="navbar" src="/navbar" seamless></iframe>
-        <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe" style="width:0; height:0; border:none" ></iframe>
-        <div>
+        <iframe src="navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+        <iframe name="dummyframe"></iframe>
+
+        <div class="flex-column">
             <h1> INSIDE </h1>
-            <div>
+            <h1 id="status"></h1>
+            <div class="flex-row">
                 <form action="/inside/arrange/clear" target="dummyframe" method="get">
-                    <br><input type="submit" value="CLEAR">
+                    <input class="generalButton" type="submit" value="Clear" onclick="getStatus(true)">
                 </form>
                 <form action="/inside/arrange/wipeWhite" target="dummyframe" method="get">
-                    <br><input type="submit" value="WHITE">
-                </form>
-                <form action="/inside/arrange/twilight" target="dummyframe" method="get">
-                    <br><input type="submit" value="twilight">
-                </form>
-                <form action="/inside/arrange/rainbow" target="dummyframe" method="get">
-                    <br><input type="submit" value="rainbow2">
-                </form>
-                <form action="/inside/arrange/rainbowCycle" target="dummyframe" method="get">
-                    <br><input type="submit" value="rainbowCycle">
-                </form>
-                <form action="/custom/inside">
-                    <br><input type="submit" value="Custom">
+                    <input class="generalButton" type="submit" value="WipeWhite" onclick="getStatus(true)">
                 </form>
             </div>
+            <div class="flex-row">
+                <form action="/inside/arrange/twilight" target="dummyframe" method="get">
+                    <input  class="generalButton"type="submit" value="Twilight" onclick="getStatus(true)">
+                </form>
+                <form action="/inside/arrange/rainbow" target="dummyframe" method="get">
+                    <input class="generalButton" type="submit" value="Rainbow2" onclick="getStatus(true)">
+                </form>
+            </div>
+            <div class="flex-row">
+                <form action="/inside/arrange/rainbowCycle" target="dummyframe" method="get">
+                    <input class="generalButton" type="submit" value="RainbowCycle" onclick="getStatus(true)">
+                </form>
+                <form action="/custom/inside">
+                    <input class="generalButton" type="submit" value="Custom" onclick="getStatus(true)">
+                </form>
+            </div>
+
         </div>
+
     </div>
 </body>
+<script>
+    let xhttp = new XMLHttpRequest();
 
+    function getStatus(delay) {
+        let path = "/inside/status";
+        document.getElementById("status").innerHTML = "<div class=\"loader\"></div>";
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                document.getElementById("status").innerHTML = this.response;
+            } else {
+                document.getElementById("status").innerHTML = "{ No Status Available }";
+            }
+        };
+        xhttp.open("GET", path, true);
+        if (delay)
+            setTimeout(function(){
+                xhttp.send();
+            }, 300);
+        else
+            xhttp.send();
+    }
+
+    getStatus();
+</script>
 </html>

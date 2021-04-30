@@ -4,15 +4,18 @@
     <link rel="stylesheet" type="text/css" href="/style.css">
     <title>INSIDE</title>
 </head>
-<body class="mainBackground">
-    <div align="center">
-        <iframe id="navbar" src="/navbar" seamless></iframe>
-        <iframe width="0" height="0" border="0" name="dummyframe" id="dummyframe" style="width:0; height:0; border:none" ></iframe>
-        <br><br><br><br><br><br><br><br><br><br>
-        <form action="/inside/custom" method="get" target="dummyframe">
-            <input type="color" name="colorValue">
-            <br><input type="submit" value="APPLY">
-        </form>
+<body>
+    <iframe src="/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+    <iframe name="dummyframe"></iframe>
+    <div class="flex-column">
+        <div class="flex-row"><h1>Inside Custom</h1></div>
+        <div class="flex-row">
+            <form action="/inside/custom" method="get" target="dummyframe">
+                <input class="generalButton" type="color" name="colorValue">
+                <br>
+                <input class="generalButton"  type="submit" value="APPLY">
+            </form>
+        </div>
     </div>
 </body>
 </html>

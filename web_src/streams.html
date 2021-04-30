@@ -1,13 +1,12 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="/style.css">
     <title>STREAMS</title>
 </head>
-<body style="background-color:deepskyblue">
-    <iframe id="navbar" src="/navbar" seamless></iframe>
+<body>
     <div align="center">
+        <iframe src="/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
         <img style="object-fit: cover; width: auto; max-height: 50vh;" src="/streams/door"  alt="stream"/>
     </div>
 </body>

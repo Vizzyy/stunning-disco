@@ -135,7 +135,7 @@ Resources:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: navbar
+      PathPart: navbar.html
       RestApiId: !Ref StunningDisco
 
   NavResourceEndpoint:

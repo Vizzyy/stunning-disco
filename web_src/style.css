@@ -8,28 +8,41 @@ input {
   @include border-radius(0);
   background-color: whitesmoke;
 }
-.column {
-  float: left;
-  width: 50%;
-}
-
-/* Clear floats after the columns */
-.row:after {
-  content: "";
-  display: table;
-  clear: both;
-}
 
 body {
   background-color: deepskyblue;
 }
 
-iframe[seamless] {
-  border: none;
+iframe {
+  width:0;
+  height:0;
+  border:none
 }
 
-#navbar {
-  width:100%;
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  flex-basis: 15vh;
+}
+
+.generalButton {
+  height: 10vh;
+  width: 30vw;
+}
+
+.navbar {
+  /*width:100%;*/
+  padding: 10px;
+}
+
+.navbar input {
+  width: 100%;
 }
 
 .loader {
@@ -44,4 +57,10 @@ iframe[seamless] {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.motionImage {
+  min-height: 50vh;
+  max-width: 95vw;
+  width: auto;
 }
