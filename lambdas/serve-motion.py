@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import boto3 as boto3
@@ -16,6 +17,8 @@ from ssm_module import *
 
 s3_client = boto3.client('s3')
 SECRETS = json.loads(os.environ["secrets"])
+proxy_host = SECRETS["HUB_HOST"]
+sqs_queue = os.environ["queue-url"]
 
 db = pymysql.connect(host=SECRETS["HUB_HOST"],
                      user=SECRETS["database"]["DB_USER"],
@@ -42,8 +45,8 @@ def create_signed_url(object_name, expiration=60):
 
 
 def lambda_handler(event=None, context=None):
+    start_time = datetime.datetime.now()
     print(f"Event: {event}")
-
     offset = 0
 
     try:
@@ -53,23 +56,30 @@ def lambda_handler(event=None, context=None):
     except Exception as e:
         print(e)
 
-    sql = f"select * from images order by id desc limit {offset},1"
-    cursor.execute(sql)
-    results = cursor.fetchone()
+    try:
+        sql = f"select Time from images order by id desc limit {offset},1"
+        cursor.execute(sql)
+        results = cursor.fetchone()
 
-    asset_name = results["Time"]
-    signed_url = create_signed_url(asset_name)
+        asset_name = results["Time"]
+        signed_url = create_signed_url(asset_name)
 
-    result = {
-        'statusCode': 200,
-        'isBase64Encoded': False,
-        'headers': {
-            'Content-Type': 'image/gif'
-        },
-        'body': signed_url,
-    }
+        result = {
+            'statusCode': 200,
+            'isBase64Encoded': False,
+            'headers': {
+                'Content-Type': 'image/gif'
+            },
+            'body': signed_url,
+        }
 
-    return result
+        sqs_send(sqs_queue, proxy_host, start_time, proxy_host+event["path"], True)
+
+        return result
+    except Exception as e:
+        sqs_send(sqs_queue, proxy_host, start_time, proxy_host+event["path"], False)
+        print(e)
+        raise
 
 
 if os.environ.get('ENV') == "dev":
