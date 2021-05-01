@@ -99,6 +99,14 @@ Resources:
       - StunningDiscoRootEndpoint
       - LightsProxyResource
       - CustomResource
+      - StaticProxyResource
+      - NavResource
+      - StreamsResource
+      - StreamsDoorResource
+      - StreamsMotionResource
+      - FaviconResource
+      - StreamsMotionBlobResource
+      - StylesheetResource
     Properties:
       RestApiId: !Ref StunningDisco
 
@@ -300,6 +308,44 @@ Resources:
         Credentials: !Ref s3Credential
         IntegrationHttpMethod: "POST"
         Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
+
+  StaticResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt StunningDisco.RootResourceId
+      PathPart: static
+      RestApiId: !Ref StunningDisco
+
+  StaticProxyResource:
+    Type: AWS::ApiGateway::Resource
+    DependsOn: StaticResource
+    Properties:
+      ParentId: !Ref StaticResource
+      PathPart: "{proxy+}"
+      RestApiId: !Ref StunningDisco
+
+  StaticProxyEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StaticProxyResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      OperationName: "Static resource proxy endpoint"
+      RequestParameters:
+        method.request.path.proxy: true
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: arn:aws:apigateway:us-east-1:s3:path/home.vizzyy.com/{proxy}
+        RequestParameters:
+          integration.request.path.proxy: method.request.path.proxy
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty", "image/png": "Empty" }
 
   LightsResource:
     Type: AWS::ApiGateway::Resource
