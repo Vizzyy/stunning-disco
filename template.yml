@@ -75,11 +75,11 @@ Resources:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
       - StunningDiscoRootEndpoint
-      - StaticProxyResource
-      - ApiProxyResource
-      - StreamsDoorResource
-      - StreamsMotionResource
-      - UserIdentityResource
+      - StreamsMotionEndpoint
+      - StreamsDoorInvokeEndpoint
+      - ApiProxyEndpoint
+      - StaticProxyEndpoint
+      - UserIdentityEndpoint
     Properties:
       RestApiId: !Ref StunningDisco
 
