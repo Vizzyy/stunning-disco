@@ -228,7 +228,7 @@ Resources:
         Type: "AWS"
         Credentials: !Ref s3Credential
         IntegrationHttpMethod: "GET"
-        Uri: arn:aws:apigateway:us-east-1:s3:path/home.vizzyy.com/{proxy}
+        Uri: !Sub arn:aws:apigateway:us-east-1:s3:path/${domainName}/{proxy}
         RequestParameters:
           integration.request.path.proxy: method.request.path.proxy
         IntegrationResponses:
