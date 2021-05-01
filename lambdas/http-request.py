@@ -39,6 +39,8 @@ def lambda_handler(event=None, context=None):
         body = event["body"]
         query_params = event["queryStringParameters"]
         path = event["path"]
+        if "/api" in path:
+            path = path.split('/api')[1]
         body_params = {}
         query_param_string = ""
 

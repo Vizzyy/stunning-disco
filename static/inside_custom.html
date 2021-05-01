@@ -1,16 +1,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico"/>
     <title>INSIDE</title>
 </head>
 <body>
-    <iframe src="/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+    <iframe src="/static/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
     <iframe name="dummyframe"></iframe>
     <div class="flex-column">
         <div class="flex-row"><h1>Inside Custom</h1></div>
         <div class="flex-row">
-            <form action="/inside/custom" method="get" target="dummyframe">
+            <form action="/api/inside/custom" method="get" target="dummyframe">
                 <input class="generalButton" type="color" name="colorValue">
                 <br>
                 <input class="generalButton"  type="submit" value="APPLY">

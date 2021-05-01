@@ -2,23 +2,24 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico"/>
     <title>Door</title>
 </head>
 <body>
-    <iframe src="navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+    <iframe src="/static/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
     <iframe name="dummyframe"></iframe>
 
     <div class="flex-column">
         <div class="flex-row"><h1>Door</h1></div>
         <div class="flex-row"><h1 id="status"></h1></div>
         <div class="flex-row">
-            <form action="/door/open" target="dummyframe" method="get">
+            <form action="/api/door/open" target="dummyframe" method="get">
                 <input type="hidden" name="entry" value="OPENED: OVERRIDE BY UI"/>
                 <input class="generalButton" type="submit" onclick="getStatus(true)" value="OPEN">
             </form>
         </div>
         <div class="flex-row">
-            <form action="/door/close" target="dummyframe" method="get">
+            <form action="/api/door/close" target="dummyframe" method="get">
                 <input type="hidden" name="entry" value="CLOSED: OVERRIDE BY UI"/>
                 <input class="generalButton" type="submit" onclick="getStatus(true)" value="CLOSE">
             </form>
@@ -29,7 +30,7 @@
     let xhttp = new XMLHttpRequest();
 
     function getStatus(delay) {
-        let path = "/door/status";
+        let path = "/api/door/status";
         document.getElementById("status").innerHTML = "<div class=\"loader\"></div>";
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {

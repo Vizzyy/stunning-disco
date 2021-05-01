@@ -1,38 +1,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico"/>
     <title>Inside</title>
 </head>
 <body>
 <div align="center">
-    <iframe src="navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+    <iframe src="/static/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
     <iframe name="dummyframe"></iframe>
 
     <div class="flex-column">
         <h1> Outside </h1>
         <h1 id="status"></h1>
         <div class="flex-row">
-            <form action="/outside/arrange/clear" target="dummyframe" method="get">
+            <form action="/api/outside/arrange/clear" target="dummyframe" method="get">
                 <input class="generalButton" type="submit" value="Clear" onclick="getStatus(true)">
             </form>
-            <form action="/outside/arrange/wipeWhite" target="dummyframe" method="get">
+            <form action="/api/outside/arrange/wipeWhite" target="dummyframe" method="get">
                 <input class="generalButton" type="submit" value="WipeWhite" onclick="getStatus(true)">
             </form>
         </div>
         <div class="flex-row">
-            <form action="/outside/arrange/twilight" target="dummyframe" method="get">
+            <form action="/api/outside/arrange/twilight" target="dummyframe" method="get">
                 <input  class="generalButton"type="submit" value="Twilight" onclick="getStatus(true)">
             </form>
-            <form action="/outside/arrange/rainbow" target="dummyframe" method="get">
+            <form action="/api/outside/arrange/rainbow" target="dummyframe" method="get">
                 <input class="generalButton" type="submit" value="Rainbow2" onclick="getStatus(true)">
             </form>
         </div>
         <div class="flex-row">
-            <form action="/outside/arrange/rainbowCycle" target="dummyframe" method="get">
+            <form action="/api/outside/arrange/rainbowCycle" target="dummyframe" method="get">
                 <input class="generalButton" type="submit" value="RainbowCycle" onclick="getStatus(true)">
             </form>
-            <form action="/custom/outside">
+            <form action="/static/outside_custom.html">
                 <input class="generalButton" type="submit" value="Custom" onclick="getStatus(true)">
             </form>
         </div>
@@ -45,7 +46,7 @@
     let xhttp = new XMLHttpRequest();
 
     function getStatus(delay) {
-        let path = "/outside/status";
+        let path = "/api/outside/status";
         document.getElementById("status").innerHTML = "<div class=\"loader\"></div>";
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {

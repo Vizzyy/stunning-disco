@@ -1,11 +1,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico"/>
     <title>Lights</title>
 </head>
 <body>
-    <iframe src="navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+    <iframe src="/static/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
     <iframe name="dummyframe"></iframe>
 
     <div class="flex-column">
@@ -15,22 +16,22 @@
         </div>
         <div class="flex-row"><h1 id="status"></h1></div>
         <div class="flex-row">
-            <form action="/lights/light2" target="dummyframe" method="get">
+            <form action="/api/lights/light2" target="dummyframe" method="get">
                 <input type="hidden" name="status" value="true" />
                 <input class="generalButton" type="submit" onclick="getStatus(true)" value="ON">
             </form>
-            <form action="/lights/tree/light2" target="dummyframe" method="get">
+            <form action="/api/lights/tree/light2" target="dummyframe" method="get">
                 <input type="hidden" name="status" value="true" />
                 <input class="generalButton" type="submit" onclick="getStatus(true)" value="ON">
             </form>
         </div>
         <div class="flex-row">
-            <form action="/lights/light2" target="dummyframe" method="get">
+            <form action="/api/lights/light2" target="dummyframe" method="get">
                 <input type="hidden" name="status" value="false" />
                 <input class="generalButton" type="submit" onclick="getStatus(true)" value="OFF">
             </form>
 
-            <form action="/lights/tree/light2" target="dummyframe" method="get">
+            <form action="/api/lights/tree/light2" target="dummyframe" method="get">
                 <input type="hidden" name="status" value="false" />
                 <input class="generalButton" type="submit" onclick="getStatus(true)" value="OFF">
             </form>
@@ -43,7 +44,7 @@
     let xhttp = new XMLHttpRequest();
 
     function getStatus(delay) {
-        let path = "/lights/status";
+        let path = "/api/lights/status";
         document.getElementById("status").innerHTML = "<div class=\"loader\"></div>";
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {

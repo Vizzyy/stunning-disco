@@ -33,7 +33,7 @@ def arguments():
 
 
 def deploy_web_resource(debug=False):
-    web_src_files = glob.glob(f'web_src/*')
+    web_src_files = glob.glob(f'static/*')
     for file_path in web_src_files:
         file_name = file_path.split('/')[-1]
         s3_client.upload_file(file_path, web_src_bucket, file_name)
@@ -96,14 +96,14 @@ def delete_lambda_layers(debug=False):
         layer_versions = lambda_client.list_layer_versions(
             LayerName=layer_name,
         )["LayerVersions"]
-        if debug: print(layer_versions)
+        if debug and layer_versions: print(f"layer_versions: {layer_versions}")
         for layer_version in layer_versions:
             version_num = layer_version["Version"]
             response = lambda_client.delete_layer_version(
                 LayerName=layer_name,
                 VersionNumber=version_num
             )
-            if debug: print(response)
+            if debug: print(f"delete_layer_version: {response}")
             print(f"Deleted {layer_name} version {version_num}")
 
 

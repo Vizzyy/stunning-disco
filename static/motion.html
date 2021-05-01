@@ -1,11 +1,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="/style.css">
-    <title>STREAMS</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico"/>
+    <title>Motion</title>
 </head>
 <body>
-    <iframe src="/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+    <iframe src="/static/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
     <div class="flex-column">
         <div class="flex-row"><div id="image" ></div></div>
         <div class="flex-row"> </div>
@@ -31,7 +32,7 @@
     }
 
     function getAsset(offset) {
-        let path = "/streams/motion/blob?offset="+offset;
+        let path = "/streams/motion?offset="+offset;
         document.getElementById("image").innerHTML = "<div class=\"loader\"></div>";
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {

@@ -16,35 +16,13 @@ Parameters:
     Type: String
   hostedZoneId:
     Type: AWS::Route53::HostedZone::Id
-  lightsPageUri:
-    Type: String
-  doorPageUri:
-    Type: String
   ssmResource:
     Type: String
   ssmPath:
     Type: String
-  insidePageUri:
-    Type: String
-  outsidePageUri:
-    Type: String
-  faviconUri:
-    Type: String
   doorStreamPath:
     Type: String
-  streamsPageUri:
-    Type: String
-  stylesheetUri:
-    Type: String
-  streamsMotionPageUri:
-    Type: String
   alarmTopic:
-    Type: String
-  navBarUri:
-    Type: String
-  insideCustomPageUri:
-    Type: String
-  outsideCustomPageUri:
     Type: String
 
 Resources:
@@ -97,16 +75,11 @@ Resources:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
       - StunningDiscoRootEndpoint
-      - LightsProxyResource
-      - CustomResource
       - StaticProxyResource
-      - NavResource
-      - StreamsResource
+      - ApiProxyResource
       - StreamsDoorResource
       - StreamsMotionResource
-      - FaviconResource
-      - StreamsMotionBlobResource
-      - StylesheetResource
+      - UserIdentityResource
     Properties:
       RestApiId: !Ref StunningDisco
 
@@ -139,32 +112,6 @@ Resources:
         - StatusCode: 200
           ResponseModels: { "text/html": "Empty" }
 
-  NavResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: navbar.html
-      RestApiId: !Ref StunningDisco
-
-  NavResourceEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref NavResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Nav bar resource path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref navBarUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
   StreamsResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -172,26 +119,8 @@ Resources:
       PathPart: streams
       RestApiId: !Ref StunningDisco
 
-  StreamsPageEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref StreamsResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Streams base path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref streamsPageUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
   StreamsDoorResource:
+    DependsOn: StreamsResource
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref StreamsResource
@@ -199,47 +128,23 @@ Resources:
       RestApiId: !Ref StunningDisco
 
   StreamsMotionResource:
+    DependsOn: StreamsResource
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref StreamsResource
       PathPart: motion
       RestApiId: !Ref StunningDisco
 
-  StreamsMotionPageEndpoint:
+  StreamsMotionEndpoint:
+    DependsOn:
+      - ServeImageLambda
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref StunningDisco
       ResourceId: !Ref StreamsMotionResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Streams motion base path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref streamsMotionPageUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
-  StreamsMotionBlobResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref StreamsMotionResource
-      PathPart: blob
-      RestApiId: !Ref StunningDisco
-
-  StreamsMotionBlobEndpoint:
-    DependsOn: ServeImageLambda
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref StreamsMotionBlobResource
       HttpMethod: GET
       AuthorizationType: NONE
-      OperationName: "Serve motion blob by invoking lambda"
+      OperationName: "Serve motion asset by invoking lambda"
       Integration:
         Type: AWS_PROXY
         Credentials: !Ref s3Credential
@@ -247,7 +152,9 @@ Resources:
         Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ServeMotionLambda.Arn}/invocations # ARN
 
   StreamsDoorInvokeEndpoint:
-    DependsOn: HttpRequestLambda
+    DependsOn:
+      - HttpRequestLambda
+      - StreamsDoorResource
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref StunningDisco
@@ -261,48 +168,31 @@ Resources:
         IntegrationHttpMethod: "POST"
         Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${RedirectLambda.Arn}/invocations # ARN
 
-  DoorResource:
+  ApiResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: door
+      PathPart: api
       RestApiId: !Ref StunningDisco
 
-  DoorPageEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref DoorResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Door base path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref doorPageUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
-  DoorProxyResource:
+  ApiProxyResource:
+    DependsOn:
+      - ApiResource
     Type: AWS::ApiGateway::Resource
     Properties:
-      ParentId: !Ref DoorResource
+      ParentId: !Ref ApiResource
       PathPart: "{proxy+}"
       RestApiId: !Ref StunningDisco
 
-  DoorProxyEndpoint:
+  ApiProxyEndpoint:
     DependsOn: HttpRequestLambda
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref StunningDisco
-      ResourceId: !Ref DoorProxyResource
+      ResourceId: !Ref ApiProxyResource
       HttpMethod: ANY
       AuthorizationType: NONE
-      OperationName: "Door proxy endpoint"
+      OperationName: "API proxy endpoint"
       Integration:
         Type: AWS_PROXY
         Credentials: !Ref s3Credential
@@ -346,257 +236,6 @@ Resources:
       MethodResponses:
         - StatusCode: 200
           ResponseModels: { "text/html": "Empty", "image/png": "Empty" }
-
-  LightsResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: lights
-      RestApiId: !Ref StunningDisco
-
-  LightsPageEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref LightsResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Lights base path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref lightsPageUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
-  LightsProxyResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref LightsResource
-      PathPart: "{proxy+}"
-      RestApiId: !Ref StunningDisco
-
-  LightsProxyEndpoint:
-    DependsOn: HttpRequestLambda
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref LightsProxyResource
-      HttpMethod: ANY
-      AuthorizationType: NONE
-      OperationName: "Lights proxy endpoint"
-      Integration:
-        Type: AWS_PROXY
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "POST"
-        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
-
-  InsideResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: inside
-      RestApiId: !Ref StunningDisco
-
-  InsidePageEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref InsideResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Inside base path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref insidePageUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
-  InsideProxyResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref InsideResource
-      PathPart: "{proxy+}"
-      RestApiId: !Ref StunningDisco
-
-  InsideProxyEndpoint:
-    DependsOn: HttpRequestLambda
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref InsideProxyResource
-      HttpMethod: ANY
-      AuthorizationType: NONE
-      OperationName: "Inside proxy endpoint"
-      Integration:
-        Type: AWS_PROXY
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "POST"
-        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
-
-  OutsideResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: outside
-      RestApiId: !Ref StunningDisco
-
-  OutsidePageEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref OutsideResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Outside base path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref outsidePageUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
-  OutsideProxyResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref OutsideResource
-      PathPart: "{proxy+}"
-      RestApiId: !Ref StunningDisco
-
-  OutsideProxyEndpoint:
-    DependsOn: HttpRequestLambda
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref OutsideProxyResource
-      HttpMethod: ANY
-      AuthorizationType: NONE
-      OperationName: "Outside proxy endpoint"
-      Integration:
-        Type: AWS_PROXY
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "POST"
-        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
-
-  CustomResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: custom
-      RestApiId: !Ref StunningDisco
-
-  CustomInsideResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref CustomResource
-      PathPart: inside
-      RestApiId: !Ref StunningDisco
-
-  CustomInsidePageEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref CustomInsideResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Inside custom path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref insideCustomPageUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
-  CustomOutsideResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !Ref CustomResource
-      PathPart: outside
-      RestApiId: !Ref StunningDisco
-
-  CustomOutsidePageEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref CustomOutsideResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Outside custom path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref outsideCustomPageUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
-  FaviconResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: favicon.ico
-      RestApiId: !Ref StunningDisco
-
-  FaviconEndpoint:
-    DependsOn: ServeImageLambda
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref FaviconResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      OperationName: "Serve image by invoking lambda"
-      Integration:
-        Type: AWS_PROXY
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: POST # needs to be POST
-        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ServeImageLambda.Arn}/invocations # ARN
-
-  StylesheetResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      ParentId: !GetAtt StunningDisco.RootResourceId
-      PathPart: style.css
-      RestApiId: !Ref StunningDisco
-
-  StylesheetEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !Ref StylesheetResource
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Stylesheet path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref stylesheetUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/css": "Empty" }
 
   HttpRequestLambda:
     Type: 'AWS::Serverless::Function'

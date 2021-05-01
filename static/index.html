@@ -1,36 +1,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico"/>
     <title>Home</title>
 </head>
 <body>
-    <iframe src="navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
+    <iframe src="/static/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>
 
     <div class="flex-column">
-        <div class="flex-row" id="status"></div>
+        <div class="flex-row"><h1 id="status"></h1></div>
         <div class="flex-row">
-            <form action="/streams">
-                <input class="generalButton" type="submit" value="VIDEO">
+            <form action="/static/streams.html">
+                <input class="generalButton" type="submit" value="Stream">
             </form>
-            <form action="/lights">
-                <input class="generalButton" type="submit" value="LIGHTS">
+            <form action="/static/lights.html">
+                <input class="generalButton" type="submit" value="Lights">
             </form>
         </div>
         <div class="flex-row">
-            <form action="/door">
-                <input class="generalButton" type="submit" value="DOOR">
+            <form action="/static/door.html">
+                <input class="generalButton" type="submit" value="Door">
             </form>
-            <form action="/inside">
-                <input class="generalButton" type="submit" value="INSIDE">
+            <form action="/static/inside.html">
+                <input class="generalButton" type="submit" value="Inside">
             </form>
         </div>
         <div class="flex-row">
-            <form action="/streams/motion">
-                <input class="generalButton" type="submit" value="MOTION">
+            <form action="/static/motion.html">
+                <input class="generalButton" type="submit" value="Motion">
             </form>
-            <form action="/outside">
-                <input class="generalButton" type="submit" value="OUTSIDE">
+            <form action="/static/outside.html">
+                <input class="generalButton" type="submit" value="Outside">
             </form>
         </div>
 
