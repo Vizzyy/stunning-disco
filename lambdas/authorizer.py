@@ -23,7 +23,7 @@ def lambda_handler(event=None, context=None):
                 }
             ]
         },
-        "context": {  # these should get passed directly into downstream lambdas via "content" param of handler
+        "context": {  # present in request context of lambda proxy integration -> event["requestContext"]["authorizer"]
             "key": "value",
             "numKey": 1,
             "boolKey": True

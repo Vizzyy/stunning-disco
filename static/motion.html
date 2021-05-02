@@ -4,6 +4,10 @@
     <link rel="stylesheet" type="text/css" href="/static/style.css">
     <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico"/>
     <title>Motion</title>
+    <script>
+        /*to prevent Firefox FOUC, this must be here*/
+        let FF_FOUC_FIX;
+    </script>
 </head>
 <body>
     <iframe src="/static/navbar.html" onload="this.before((this.contentDocument.body||this.contentDocument).children[0]);this.remove()"></iframe>

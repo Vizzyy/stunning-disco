@@ -5,6 +5,8 @@ import os
 def lambda_handler(event=None, context=None):
     print(event)
     try:
+        authorizer = event["requestContext"]["authorizer"]
+        print(f"authorizer: {authorizer}")
         issuer = event["requestContext"]["identity"]["clientCert"]["issuerDN"]
         subject = event["requestContext"]["identity"]["clientCert"]["subjectDN"]
         cn = subject.split(',')[0].split('CN=')[1]
