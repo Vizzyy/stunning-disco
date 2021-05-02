@@ -6,6 +6,8 @@ Parameters:
     Type: String
   alarmTopic:
     Type: String
+  s3Credential:
+    Type: String
 
 Outputs:
   AuthorizerReference:
@@ -20,6 +22,7 @@ Resources:
     DependsOn:
       - AuthorizerLambda
     Properties:
+      AuthorizerCredentials: !Ref s3Credential
       AuthorizerResultTtlInSeconds: 0
       AuthorizerUri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${AuthorizerLambda.Arn}/invocations
       Name: DefaultAuthorizer

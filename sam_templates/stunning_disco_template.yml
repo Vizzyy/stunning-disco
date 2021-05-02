@@ -163,6 +163,7 @@ Resources:
       Parameters:
         StunningDisco: !Ref StunningDisco
         alarmTopic: !Ref alarmTopic
+        s3Credential: !Ref s3Credential
 
   PythonLayersStack:
     Type: AWS::Serverless::Application
