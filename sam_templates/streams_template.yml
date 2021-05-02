@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+  StunningDisco:
+    Type: String
+  StunningDiscoRootResource:
+    Type: String
+  s3Credential:
+    Type: String
+  alarmTopic:
+    Type: String
+  PythonMysqlLayer:
+    Type: String
+  PythonSqsModuleLayer:
+    Type: String
+  PythonSsmModuleLayer:
+    Type: String
+  ssmPath:
+    Type: String
+  doorStreamPath:
+    Type: String
+
+Resources:
+  StreamsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StunningDiscoRootResource
+      PathPart: streams
+      RestApiId: !Ref StunningDisco
+
+  StreamsDoorResource:
+    DependsOn: StreamsResource
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StreamsResource
+      PathPart: door
+      RestApiId: !Ref StunningDisco
+
+  StreamsMotionResource:
+    DependsOn: StreamsResource
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StreamsResource
+      PathPart: motion
+      RestApiId: !Ref StunningDisco
+
+  StreamsMotionEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StreamsMotionResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      OperationName: "Serve motion asset by invoking lambda"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: POST # needs to be POST
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ServeMotionLambda.Arn}/invocations # ARN
+
+  StreamsDoorInvokeEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StreamsDoorResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      OperationName: "Invoke door stream"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${RedirectLambda.Arn}/invocations # ARN
+
+  RedirectLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'redirect'
+      Handler: redirect.lambda_handler
+      Runtime: python3.8
+      CodeUri: ../redirect.zip
+      Timeout: 5
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          REDIRECT_URL: !Ref doorStreamPath
+          TZ: America/New_York
+
+  RedirectLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${RedirectLambda}"
+      RetentionInDays: 7
+
+  RedirectLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '2'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref RedirectLambda
+
+  ServeMotionLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'serve-motion'
+      Handler: serve-motion.lambda_handler
+      Runtime: python3.8
+      CodeUri: ../serve-motion.zip
+      MemorySize: 128
+      Timeout: 30
+      Layers:
+        - !Ref PythonMysqlLayer
+        - !Ref PythonSqsModuleLayer
+        - !Ref PythonSsmModuleLayer
+      Role: !Ref s3Credential
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          SSM_PATH: !Ref ssmPath
+          TZ: America/New_York
+
+  ServeMotionLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ServeMotionLambda}"
+      RetentionInDays: 7
+
+  ServeMotionLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '2'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ServeMotionLambda

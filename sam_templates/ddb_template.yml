@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+  StunningDiscoDdbTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: "Timestamp"
+          AttributeType: "S"
+        -
+          AttributeName: "Id"
+          AttributeType: "N"
+      KeySchema:
+        -
+          AttributeName: "Id"
+          KeyType: "HASH"
+        -
+          AttributeName: "Timestamp"
+          KeyType: "RANGE"
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: "StunningDiscoTable"
+

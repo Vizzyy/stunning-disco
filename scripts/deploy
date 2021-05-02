@@ -176,13 +176,15 @@ def deploy_sam_resources(debug=False):
     zip_files = zip_lambda_resources()
 
     print("Deploying SAM resources.")
-    deploy_cmd = f"sam deploy --resolve-s3 --stack-name {stack_name} " \
-                 f"--capabilities CAPABILITY_IAM --no-fail-on-empty-changeset".split(' ')
+    deploy_cmd = f"sam deploy --template-file sam_templates/stunning_disco_template.yml --resolve-s3 " \
+                 f"--stack-name {stack_name} --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND " \
+                 f"--no-fail-on-empty-changeset".split(' ')
     result = subprocess.run(deploy_cmd, capture_output=True)
     if debug:
         print(result.stdout.decode("utf-8"))
     if result.returncode != 0:
         print(result.stderr.decode("utf-8"))
+        delete_lambda_zips(zip_files)
         raise RuntimeError("Unsuccessful SAM deployment.")
     else:
         print("SAM deploy successful.")

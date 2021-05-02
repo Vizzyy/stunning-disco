@@ -1,6 +1,6 @@
 *.iml
 packaged.yml
-samconfig.toml
+sam_templates/samconfig.toml
 scripts/upload_web_src.sh
 *.DS_Store
 *.crt

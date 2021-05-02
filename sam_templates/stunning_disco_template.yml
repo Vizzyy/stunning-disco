@@ -1,0 +1,201 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+  domainName:
+    Type: String
+  restApiName:
+    Type: String
+  trustStoreUri:
+    Type: String
+  apiHostCert:
+    Type: String
+  s3Credential:
+    Type: String
+  rootEndpointUri:
+    Type: String
+  hostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+  ssmResource:
+    Type: String
+  ssmPath:
+    Type: String
+  doorStreamPath:
+    Type: String
+  alarmTopic:
+    Type: String
+  sqsQueue:
+    Type: String
+
+Resources:
+  StunningDisco:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Ref restApiName
+      DisableExecuteApiEndpoint: True
+      BinaryMediaTypes:
+        - "*/*" # Allow for images to be returned by lambda proxy
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  StunningDiscoDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Ref domainName
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      MutualTlsAuthentication:
+        TruststoreUri: !Ref trustStoreUri
+      RegionalCertificateArn: !Ref apiHostCert
+      SecurityPolicy: TLS_1_2
+
+  ProdStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: Prod
+      RestApiId: !Ref StunningDisco
+      DeploymentId: !Ref StunningDiscoDeployment
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: True
+          ThrottlingBurstLimit: '10'
+          ThrottlingRateLimit: '10.0'
+
+  StunningDiscoDomainMapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    DependsOn: ProdStage
+    Properties:
+      DomainName: !Ref StunningDiscoDomain
+      RestApiId: !Ref StunningDisco
+      Stage: !Ref ProdStage
+
+  StunningDiscoDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - StunningDiscoRootEndpoint
+      - UserIdentityStack
+      - StreamsStack
+      - DdbStack
+      - ApiProxyStack
+      - StaticProxyStack
+    Properties:
+      RestApiId: !Ref StunningDisco
+
+  StunningDiscoDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref 'hostedZoneId'
+      Name: !Ref domainName
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt StunningDiscoDomain.RegionalHostedZoneId
+        DNSName: !GetAtt StunningDiscoDomain.RegionalDomainName
+
+  StunningDiscoRootEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !GetAtt StunningDisco.RootResourceId
+      HttpMethod: "GET"
+      AuthorizationType: NONE
+      OperationName: "Root path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref rootEndpointUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
+  PythonMysqlLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.8
+      Content:
+        S3Bucket: vizzyy-packaging
+        S3Key: pymysql_layer.zip
+      LayerName: pymysql_layer
+
+  PythonSqsModuleLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.8
+      Content:
+        S3Bucket: vizzyy-packaging
+        S3Key: sqs_module_layer.zip
+      LayerName: sqs_module_layer
+
+  PythonSsmModuleLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.8
+      Content:
+        S3Bucket: vizzyy-packaging
+        S3Key: ssm_module_layer.zip
+      LayerName: ssm_module_layer
+
+  DdbStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ddb_template.yml
+
+  UserIdentityStack:
+    Type: AWS::Serverless::Application
+    DependsOn: StunningDisco
+    Properties:
+      Location: user_identity_template.yml
+      Parameters:
+        StunningDisco: !Ref StunningDisco
+        s3Credential: !Ref s3Credential
+        alarmTopic: !Ref alarmTopic
+        StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
+
+  StreamsStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: streams_template.yml
+      Parameters:
+        StunningDisco: !Ref StunningDisco
+        s3Credential: !Ref s3Credential
+        alarmTopic: !Ref alarmTopic
+        StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
+        PythonMysqlLayer: !Ref PythonMysqlLayer
+        PythonSqsModuleLayer: !Ref PythonSqsModuleLayer
+        PythonSsmModuleLayer: !Ref PythonSsmModuleLayer
+        ssmPath: !Ref ssmPath
+        doorStreamPath: !Ref doorStreamPath
+
+  ApiProxyStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: api_proxy_template.yml
+      Parameters:
+        StunningDisco: !Ref StunningDisco
+        s3Credential: !Ref s3Credential
+        alarmTopic: !Ref alarmTopic
+        StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
+        PythonSqsModuleLayer: !Ref PythonSqsModuleLayer
+        PythonSsmModuleLayer: !Ref PythonSsmModuleLayer
+        ssmPath: !Ref ssmPath
+        sqsQueue: !Ref sqsQueue
+        ssmResource: !Ref ssmResource
+
+  StaticProxyStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: static_proxy_template.yml
+      Parameters:
+        StunningDisco: !Ref StunningDisco
+        s3Credential: !Ref s3Credential
+        StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
+        domainName: !Ref domainName

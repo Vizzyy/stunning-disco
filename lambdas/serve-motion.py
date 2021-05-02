@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 import boto3 as boto3
-import pymysql
 import sys
 from botocore.exceptions import ClientError
 
@@ -19,24 +18,14 @@ s3_client = boto3.client('s3')
 SECRETS = json.loads(os.environ["secrets"])
 proxy_host = SECRETS["HUB_HOST"]
 sqs_queue = os.environ["queue-url"]
-
-db = pymysql.connect(host=SECRETS["HUB_HOST"],
-                     user=SECRETS["database"]["DB_USER"],
-                     password=SECRETS["database"]["DB_PASS"],
-                     database=SECRETS["database"]["DB_USER"],
-                     port=SECRETS["database"]["DB_PORT"],
-                     ssl_ca='/tmp/db-cert.crt',
-                     cursorclass=pymysql.cursors.DictCursor)
-
-cursor = db.cursor()
-print("DB connection initiated.")
+bucket = "vizzyy-motion-events"
 
 
 def create_signed_url(object_name, expiration=60):
     try:
         request_params = {
-            'Bucket': "vizzyy-motion-events",
-            'Key': f"{object_name}.gif"
+            'Bucket': bucket,
+            'Key': f"{object_name}"
         }
         return s3_client.generate_presigned_url('get_object', Params=request_params, ExpiresIn=expiration)
     except ClientError as e:
@@ -57,11 +46,9 @@ def lambda_handler(event=None, context=None):
         print(e)
 
     try:
-        sql = f"select Time from images order by id desc limit {offset},1"
-        cursor.execute(sql)
-        results = cursor.fetchone()
-
-        asset_name = results["Time"]
+        bucket_contents = s3_client.list_objects(Bucket=bucket)['Contents']
+        bucket_contents.sort(key=lambda asset: asset["Key"], reverse=True)
+        asset_name = bucket_contents[offset]["Key"]
         signed_url = create_signed_url(asset_name)
 
         result = {
@@ -87,7 +74,7 @@ if os.environ.get('ENV') == "dev":
     offset_param = 0
 
     test_event = {
-        'resource': '/streams/motion/blob', 'path': '/streams/motion/blob', 'httpMethod': 'GET',
+        'resource': '/streams/motion', 'path': '/streams/motion', 'httpMethod': 'GET',
         'queryStringParameters': {
             'offset': f'{offset_param}'
         },

@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  StunningDisco:
+    Type: String
+  StunningDiscoRootResource:
+    Type: String
+  s3Credential:
+    Type: String
+  alarmTopic:
+    Type: String
+
+Resources:
+  UserIdentityLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'user-data'
+      Handler: user-data.lambda_handler
+      Runtime: python3.8
+      CodeUri: ../user-data.zip
+      Timeout: 5
+      Policies:
+        - AWSLambdaBasicExecutionRole
+
+  UserIdentityLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${UserIdentityLambda}"
+      RetentionInDays: 7
+
+  UserIdentityLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '2'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref UserIdentityLambda
+
+  UserIdentityResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StunningDiscoRootResource
+      PathPart: user
+      RestApiId: !Ref StunningDisco
+
+  UserIdentityEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref UserIdentityResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      OperationName: "User identity endpoint"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${UserIdentityLambda.Arn}/invocations # ARN

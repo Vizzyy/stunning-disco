@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+  StunningDisco:
+    Type: String
+  StunningDiscoRootResource:
+    Type: String
+  s3Credential:
+    Type: String
+  alarmTopic:
+    Type: String
+  PythonSqsModuleLayer:
+    Type: String
+  PythonSsmModuleLayer:
+    Type: String
+  ssmPath:
+    Type: String
+  sqsQueue:
+    Type: String
+  ssmResource:
+    Type: String
+
+Resources:
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StunningDiscoRootResource
+      PathPart: api
+      RestApiId: !Ref StunningDisco
+
+  ApiProxyResource:
+    DependsOn:
+      - ApiResource
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref ApiResource
+      PathPart: "{proxy+}"
+      RestApiId: !Ref StunningDisco
+
+  ApiProxyEndpoint:
+    DependsOn: HttpRequestLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref ApiProxyResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      OperationName: "API proxy endpoint"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${HttpRequestLambda.Arn}/invocations # ARN
+
+  HttpRequestLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'http-request'
+      Handler: http-request.lambda_handler
+      Runtime: python3.8
+      CodeUri: ../http-request.zip
+      MemorySize: 128
+      Timeout: 30
+      Policies:
+        - Statement:
+            - Sid: SSMGetParamsByPath
+              Effect: Allow
+              Action:
+                - ssm:GetParametersByPath
+              Resource: !Ref ssmResource
+        - Statement:
+            - Sid: SQSpushRecord
+              Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !Ref sqsQueue
+        - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          SSM_PATH: !Ref ssmPath
+          TZ: America/New_York
+      Layers:
+        - !Ref PythonSqsModuleLayer
+        - !Ref PythonSsmModuleLayer
+
+  HttpRequestLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${HttpRequestLambda}"
+      RetentionInDays: 7
+
+  HttpRequestLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '2'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref HttpRequestLambda
