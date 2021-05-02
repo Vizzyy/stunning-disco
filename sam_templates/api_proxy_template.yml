@@ -10,10 +10,6 @@ Parameters:
     Type: String
   alarmTopic:
     Type: String
-  PythonSqsModuleLayer:
-    Type: String
-  PythonSsmModuleLayer:
-    Type: String
   ssmPath:
     Type: String
   sqsQueue:
@@ -45,7 +41,8 @@ Resources:
       RestApiId: !Ref StunningDisco
       ResourceId: !Ref ApiProxyResource
       HttpMethod: ANY
-      AuthorizationType: NONE
+      AuthorizationType: CUSTOM
+      AuthorizerId: !ImportValue StunningDiscoAuthorizer
       OperationName: "API proxy endpoint"
       Integration:
         Type: AWS_PROXY
@@ -81,8 +78,8 @@ Resources:
           SSM_PATH: !Ref ssmPath
           TZ: America/New_York
       Layers:
-        - !Ref PythonSqsModuleLayer
-        - !Ref PythonSsmModuleLayer
+        - !ImportValue PythonSqsModuleLayerReference
+        - !ImportValue PythonSsmModuleLayerReference
 
   HttpRequestLambdaLogGroup:
     Type: AWS::Logs::LogGroup

@@ -10,8 +10,30 @@ Parameters:
     Type: String
   domainName:
     Type: String
+  rootEndpointUri:
+    Type: String
 
 Resources:
+  StunningDiscoRootEndpoint:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref StunningDiscoRootResource
+      HttpMethod: "GET"
+      AuthorizationType: CUSTOM
+      AuthorizerId: !ImportValue StunningDiscoAuthorizer
+      OperationName: "Root path"
+      Integration:
+        Type: "AWS"
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "GET"
+        Uri: !Ref rootEndpointUri
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels: { "text/html": "Empty" }
+
   StaticResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -33,7 +55,8 @@ Resources:
       RestApiId: !Ref StunningDisco
       ResourceId: !Ref StaticProxyResource
       HttpMethod: GET
-      AuthorizationType: NONE
+      AuthorizationType: CUSTOM
+      AuthorizerId: !ImportValue StunningDiscoAuthorizer
       OperationName: "Static resource proxy endpoint"
       RequestParameters:
         method.request.path.proxy: true

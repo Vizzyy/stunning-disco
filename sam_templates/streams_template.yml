@@ -10,12 +10,6 @@ Parameters:
     Type: String
   alarmTopic:
     Type: String
-  PythonMysqlLayer:
-    Type: String
-  PythonSqsModuleLayer:
-    Type: String
-  PythonSsmModuleLayer:
-    Type: String
   ssmPath:
     Type: String
   doorStreamPath:
@@ -51,7 +45,8 @@ Resources:
       RestApiId: !Ref StunningDisco
       ResourceId: !Ref StreamsMotionResource
       HttpMethod: GET
-      AuthorizationType: NONE
+      AuthorizationType: CUSTOM
+      AuthorizerId: !ImportValue StunningDiscoAuthorizer
       OperationName: "Serve motion asset by invoking lambda"
       Integration:
         Type: AWS_PROXY
@@ -65,7 +60,8 @@ Resources:
       RestApiId: !Ref StunningDisco
       ResourceId: !Ref StreamsDoorResource
       HttpMethod: GET
-      AuthorizationType: NONE
+      AuthorizationType: CUSTOM
+      AuthorizerId: !ImportValue StunningDiscoAuthorizer
       OperationName: "Invoke door stream"
       Integration:
         Type: AWS_PROXY
@@ -123,9 +119,9 @@ Resources:
       MemorySize: 128
       Timeout: 30
       Layers:
-        - !Ref PythonMysqlLayer
-        - !Ref PythonSqsModuleLayer
-        - !Ref PythonSsmModuleLayer
+        - !ImportValue PythonMysqlLayerReference
+        - !ImportValue PythonSqsModuleLayerReference
+        - !ImportValue PythonSsmModuleLayerReference
       Role: !Ref s3Credential
       Policies:
         - AWSLambdaBasicExecutionRole

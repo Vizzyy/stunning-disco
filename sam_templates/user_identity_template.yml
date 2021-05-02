@@ -60,7 +60,8 @@ Resources:
       RestApiId: !Ref StunningDisco
       ResourceId: !Ref UserIdentityResource
       HttpMethod: GET
-      AuthorizationType: NONE
+      AuthorizationType: CUSTOM
+      AuthorizerId: !ImportValue StunningDiscoAuthorizer
       OperationName: "User identity endpoint"
       Integration:
         Type: AWS_PROXY

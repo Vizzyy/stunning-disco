@@ -76,12 +76,13 @@ Resources:
   StunningDiscoDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
-      - StunningDiscoRootEndpoint
       - UserIdentityStack
       - StreamsStack
       - DdbStack
       - ApiProxyStack
       - StaticProxyStack
+      - AuthorizerProxyStack
+      - PythonLayersStack
     Properties:
       RestApiId: !Ref StunningDisco
 
@@ -95,55 +96,6 @@ Resources:
         HostedZoneId: !GetAtt StunningDiscoDomain.RegionalHostedZoneId
         DNSName: !GetAtt StunningDiscoDomain.RegionalDomainName
 
-  StunningDiscoRootEndpoint:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref StunningDisco
-      ResourceId: !GetAtt StunningDisco.RootResourceId
-      HttpMethod: "GET"
-      AuthorizationType: NONE
-      OperationName: "Root path"
-      Integration:
-        Type: "AWS"
-        Credentials: !Ref s3Credential
-        IntegrationHttpMethod: "GET"
-        Uri: !Ref rootEndpointUri
-        IntegrationResponses:
-          - StatusCode: 200
-      MethodResponses:
-        - StatusCode: 200
-          ResponseModels: { "text/html": "Empty" }
-
-  PythonMysqlLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      CompatibleRuntimes:
-        - python3.8
-      Content:
-        S3Bucket: vizzyy-packaging
-        S3Key: pymysql_layer.zip
-      LayerName: pymysql_layer
-
-  PythonSqsModuleLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      CompatibleRuntimes:
-        - python3.8
-      Content:
-        S3Bucket: vizzyy-packaging
-        S3Key: sqs_module_layer.zip
-      LayerName: sqs_module_layer
-
-  PythonSsmModuleLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      CompatibleRuntimes:
-        - python3.8
-      Content:
-        S3Bucket: vizzyy-packaging
-        S3Key: ssm_module_layer.zip
-      LayerName: ssm_module_layer
-
   DdbStack:
     Type: AWS::Serverless::Application
     Properties:
@@ -151,7 +103,7 @@ Resources:
 
   UserIdentityStack:
     Type: AWS::Serverless::Application
-    DependsOn: StunningDisco
+    DependsOn: AuthorizerProxyStack
     Properties:
       Location: user_identity_template.yml
       Parameters:
@@ -162,6 +114,9 @@ Resources:
 
   StreamsStack:
     Type: AWS::Serverless::Application
+    DependsOn:
+      - AuthorizerProxyStack
+      - PythonLayersStack
     Properties:
       Location: streams_template.yml
       Parameters:
@@ -169,14 +124,14 @@ Resources:
         s3Credential: !Ref s3Credential
         alarmTopic: !Ref alarmTopic
         StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
-        PythonMysqlLayer: !Ref PythonMysqlLayer
-        PythonSqsModuleLayer: !Ref PythonSqsModuleLayer
-        PythonSsmModuleLayer: !Ref PythonSsmModuleLayer
         ssmPath: !Ref ssmPath
         doorStreamPath: !Ref doorStreamPath
 
   ApiProxyStack:
     Type: AWS::Serverless::Application
+    DependsOn:
+      - AuthorizerProxyStack
+      - PythonLayersStack
     Properties:
       Location: api_proxy_template.yml
       Parameters:
@@ -184,14 +139,14 @@ Resources:
         s3Credential: !Ref s3Credential
         alarmTopic: !Ref alarmTopic
         StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
-        PythonSqsModuleLayer: !Ref PythonSqsModuleLayer
-        PythonSsmModuleLayer: !Ref PythonSsmModuleLayer
         ssmPath: !Ref ssmPath
         sqsQueue: !Ref sqsQueue
         ssmResource: !Ref ssmResource
 
   StaticProxyStack:
     Type: AWS::Serverless::Application
+    DependsOn:
+      - AuthorizerProxyStack
     Properties:
       Location: static_proxy_template.yml
       Parameters:
@@ -199,3 +154,17 @@ Resources:
         s3Credential: !Ref s3Credential
         StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
         domainName: !Ref domainName
+        rootEndpointUri: !Ref rootEndpointUri
+
+  AuthorizerProxyStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: authorizer_template.yml
+      Parameters:
+        StunningDisco: !Ref StunningDisco
+        alarmTopic: !Ref alarmTopic
+
+  PythonLayersStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: python_layers_template.yml
