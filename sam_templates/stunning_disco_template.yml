@@ -76,7 +76,6 @@ Resources:
   StunningDiscoDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn:
-      - UserIdentityStack
       - StreamsStack
       - DdbStack
       - ApiProxyStack
@@ -100,17 +99,6 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location: ddb_template.yml
-
-  UserIdentityStack:
-    Type: AWS::Serverless::Application
-    DependsOn: AuthorizerProxyStack
-    Properties:
-      Location: user_identity_template.yml
-      Parameters:
-        StunningDisco: !Ref StunningDisco
-        s3Credential: !Ref s3Credential
-        alarmTopic: !Ref alarmTopic
-        StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
 
   StreamsStack:
     Type: AWS::Serverless::Application
