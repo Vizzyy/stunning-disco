@@ -1,5 +1,17 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: 'AWS::Serverless-2016-10-31'
+
+Parameters:
+  TableName:
+    Type: String
+    Default: "StunningDiscoTable"
+
+Outputs:
+  StunningDiscoTableName:
+    Value: !Ref TableName
+    Export:
+      Name: StunningDiscoTableName
+
 Resources:
   StunningDiscoDdbTable:
     Type: AWS::DynamoDB::Table
@@ -10,7 +22,7 @@ Resources:
           AttributeType: "S"
         -
           AttributeName: "Id"
-          AttributeType: "N"
+          AttributeType: "S"
       KeySchema:
         -
           AttributeName: "Id"
@@ -22,5 +34,5 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
-      TableName: "StunningDiscoTable"
+      TableName: !Ref TableName
 

@@ -146,6 +146,7 @@ Resources:
 
   AuthorizerProxyStack:
     Type: AWS::Serverless::Application
+    DependsOn: DdbStack
     Properties:
       Location: authorizer_template.yml
       Parameters:

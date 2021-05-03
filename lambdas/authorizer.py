@@ -1,17 +1,49 @@
+import datetime
 import os
+import boto3
+import uuid
+
+dynamodb = boto3.resource('dynamodb')
+table_name = os.environ.get('TableName')
+table_object = dynamodb.Table(table_name)
 
 
 def lambda_handler(event=None, context=None):
-    print(event)
+    print(f"Incoming event: {event}")
 
     try:
         subject = event["requestContext"]["identity"]["clientCert"]["subjectDN"]
+        path = event["path"]
         cn = subject.split(',')[0].split('CN=')[1]
     except Exception:
         print("Could not parse details from client certificate.")
         raise
 
-    authorizer_reponse = {
+    stored_object = {
+        'Id': str(uuid.uuid4()),
+        'Timestamp': str(datetime.datetime.now()),
+        'Principal': cn,
+        'Path': path,
+        'QueryParams': None,
+        'Body': None
+    }
+
+    if cn != "lambda" and "/api" in path and "status" not in path:
+        if "queryStringParameters" in event.keys():
+            stored_object["QueryParams"] = event["queryStringParameters"]
+
+        if "body" in event.keys():
+            stored_object["Body"] = event["body"]
+
+        response = table_object.put_item(
+            Item=stored_object
+        )
+
+        print(f"Stored event into table: {response}")
+    else:
+        print(f"Will not log stored_object: {stored_object}")
+
+    authorizer_response = {
         "principalId": cn,
         "policyDocument": {
             "Version": "2012-10-17",
@@ -30,17 +62,17 @@ def lambda_handler(event=None, context=None):
         }
     }
 
-    print(authorizer_reponse)
+    print(f"Returning authorizer_response: {authorizer_response}")
 
-    return authorizer_reponse
+    return authorizer_response
 
 
 if os.environ.get('ENV') == "dev":
 
     request = {
         "type": "REQUEST",
-        "resource": "/user",
-        "path": "/user",
+        "resource": "/api/lights/light2",
+        "path": "/api/lights/light2",
         "httpMethod": "GET",
         "queryStringParameters": {},
         "pathParameters": {},

@@ -38,8 +38,13 @@ Resources:
       CodeUri: ../authorizer.zip
       MemorySize: 128
       Timeout: 30
+      Role: !Ref s3Credential
       Policies:
         - AWSLambdaBasicExecutionRole
+      Environment:
+        Variables:
+          TableName: !ImportValue StunningDiscoTableName
+          TZ: America/New_York
 
   AuthorizerLambdaLogGroup:
     Type: AWS::Logs::LogGroup
