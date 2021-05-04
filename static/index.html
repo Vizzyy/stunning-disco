@@ -52,11 +52,16 @@
             .reduce((ac, x)=>{ac[x[0]] = x[1];return ac;}, {});
     }
 
-    xhttp.open('GET', document.location, false);
-    xhttp.send(null);
-    let headers = parseHttpHeaders(xhttp.getAllResponseHeaders());
-    let parsed_response = "Hello, " + headers["principalid"] + "!"
-    document.getElementById("status").innerHTML = parsed_response
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            let headers = parseHttpHeaders(xhttp.getAllResponseHeaders());
+            let parsed_response = "Hello, " + headers["principalid"].trim() + "!"
+            document.getElementById("status").innerHTML = parsed_response
+        }
+    };
+    xhttp.open("GET", '/', true);
+    xhttp.send();
+
 </script>
 </html>
 
