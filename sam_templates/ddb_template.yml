@@ -5,6 +5,14 @@ Parameters:
   TableName:
     Type: String
     Default: "StunningDiscoTable"
+  StunningDiscoRootResource:
+    Type: String
+  StunningDisco:
+    Type: String
+  alarmTopic:
+    Type: String
+  s3Credential:
+    Type: String
 
 Outputs:
   StunningDiscoTableName:
@@ -36,3 +44,65 @@ Resources:
         WriteCapacityUnits: "5"
       TableName: !Ref TableName
 
+  DdbLogsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !Ref StunningDiscoRootResource
+      PathPart: logs
+      RestApiId: !Ref StunningDisco
+
+  DdbLogsEndpoint:
+    DependsOn: DdbLogsLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref DdbLogsResource
+      HttpMethod: GET
+      AuthorizationType: CUSTOM
+      AuthorizerId: !ImportValue StunningDiscoAuthorizer
+      OperationName: "DDB logs endpoint"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${DdbLogsLambda.Arn}/invocations # ARN
+
+  DdbLogsLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'ddb-logs'
+      Handler: ddb-logs.lambda_handler
+      Runtime: python3.8
+      CodeUri: ../ddb-logs.zip
+      MemorySize: 128
+      Timeout: 30
+      Role: !Ref s3Credential
+      Environment:
+        Variables:
+          TableName: !Ref TableName
+          TZ: America/New_York
+
+  DdbLogsLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${DdbLogsLambda}"
+      RetentionInDays: 7
+
+  DdbLogsLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '2'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref DdbLogsLambda
