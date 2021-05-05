@@ -21,11 +21,11 @@ Resources:
           AttributeName: "Timestamp"
           AttributeType: "S"
         -
-          AttributeName: "Id"
+          AttributeName: "Principal"
           AttributeType: "S"
       KeySchema:
         -
-          AttributeName: "Id"
+          AttributeName: "Principal"
           KeyType: "HASH"
         -
           AttributeName: "Timestamp"
