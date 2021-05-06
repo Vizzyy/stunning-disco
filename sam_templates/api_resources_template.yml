@@ -28,6 +28,7 @@ Resources:
   ApiProxyResource:
     DependsOn:
       - ApiResource
+      - ApiLogsResource
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !Ref ApiResource
@@ -105,3 +106,68 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Ref HttpRequestLambda
+
+  ApiLogsResource:
+    Type: AWS::ApiGateway::Resource
+    DependsOn:
+      - ApiResource
+    Properties:
+      ParentId: !Ref ApiResource
+      PathPart: logs
+      RestApiId: !Ref StunningDisco
+
+  ApiLogsEndpoint:
+    DependsOn: ApiLogsLambda
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StunningDisco
+      ResourceId: !Ref ApiLogsResource
+      HttpMethod: GET
+      AuthorizationType: CUSTOM
+      AuthorizerId: !ImportValue StunningDiscoAuthorizer
+      OperationName: "API logs endpoint"
+      Integration:
+        Type: AWS_PROXY
+        Credentials: !Ref s3Credential
+        IntegrationHttpMethod: "POST"
+        Uri: !Sub arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/${ApiLogsLambda.Arn}/invocations # ARN
+
+  ApiLogsLambda:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: 'api-logs'
+      Handler: api-logs.lambda_handler
+      Runtime: python3.8
+      CodeUri: ../api-logs.zip
+      MemorySize: 128
+      Timeout: 30
+      Role: !Ref s3Credential
+      Environment:
+        Variables:
+          TableName: !ImportValue StunningDiscoTableName
+          TZ: America/New_York
+
+  ApiLogsLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${ApiLogsLambda}"
+      RetentionInDays: 7
+
+  ApiLogsLambdaAlarm: # Alarm if 1 bad data point (of >= 2 errors each) within 5 mins
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - !Ref alarmTopic
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      DatapointsToAlarm: 1 # this is the M in "M out of N data points to alarm"
+      EvaluationPeriods: 5 # this is the N in "M out of N data points to alarm"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 60 # seconds between data points
+      Statistic: Sum
+      Unit: Count
+      Threshold: '2'
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiLogsLambda

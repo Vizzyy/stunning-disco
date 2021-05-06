@@ -10,6 +10,8 @@ import boto3
 import zipfile
 import subprocess
 
+import sys
+
 s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda')
 api_client = boto3.client('apigateway')
@@ -162,8 +164,18 @@ def delete_cfn_resources(debug=False):
 
     stack_delete_waiter = cfn_client.get_waiter('stack_delete_complete')
     print(f"Waiting on deletion of {stack_name}...")
-    stack_delete_waiter.wait(StackName=stack_name)
-    print(f"Successfully deleted stack {stack_name}.")
+    try:
+        stack_delete_waiter.wait(StackName=stack_name)
+        print(f"Successfully deleted stack {stack_name}.")
+    except Exception as e:
+        print(f"{type(e).__name__}: {e}")
+        cfn_stack = cfn_client.describe_stack_resources(StackName=stack_name)
+        stack_resources = cfn_stack["StackResources"]
+        failed_resources = []
+        for resource in stack_resources:
+            if resource["ResourceStatus"] != "DELETE_COMPLETE":
+                failed_resources.append(resource)
+        print(f"{json.dumps(failed_resources, indent=4, sort_keys=True, default=str)}")
 
     if api_data is not None:
         api_id = api_data["id"]

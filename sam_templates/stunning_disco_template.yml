@@ -78,8 +78,8 @@ Resources:
     DependsOn:
       - StreamsStack
       - DdbStack
-      - ApiProxyStack
-      - StaticProxyStack
+      - ApiResourcesStack
+      - StaticResourcesStack
       - AuthorizerProxyStack
       - PythonLayersStack
     Properties:
@@ -99,12 +99,6 @@ Resources:
     Type: AWS::Serverless::Application
     Properties:
       Location: ddb_template.yml
-      Parameters:
-        StunningDisco: !Ref StunningDisco
-        s3Credential: !Ref s3Credential
-        alarmTopic: !Ref alarmTopic
-        StunningDiscoRootResource: !GetAtt StunningDisco.RootResourceId
-
 
   StreamsStack:
     Type: AWS::Serverless::Application
@@ -121,13 +115,13 @@ Resources:
         ssmPath: !Ref ssmPath
         doorStreamPath: !Ref doorStreamPath
 
-  ApiProxyStack:
+  ApiResourcesStack:
     Type: AWS::Serverless::Application
     DependsOn:
       - AuthorizerProxyStack
       - PythonLayersStack
     Properties:
-      Location: api_proxy_template.yml
+      Location: api_resources_template.yml
       Parameters:
         StunningDisco: !Ref StunningDisco
         s3Credential: !Ref s3Credential
@@ -137,12 +131,12 @@ Resources:
         sqsQueue: !Ref sqsQueue
         ssmResource: !Ref ssmResource
 
-  StaticProxyStack:
+  StaticResourcesStack:
     Type: AWS::Serverless::Application
     DependsOn:
       - AuthorizerProxyStack
     Properties:
-      Location: static_proxy_template.yml
+      Location: static_resources_template.yml
       Parameters:
         StunningDisco: !Ref StunningDisco
         s3Credential: !Ref s3Credential
