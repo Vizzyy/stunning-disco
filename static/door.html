@@ -14,8 +14,8 @@
     <iframe name="dummyframe"></iframe>
 
     <div class="flex-column">
-        <div class="flex-row"><h1>Door</h1></div>
-        <div class="flex-row"><h1 id="status"></h1></div>
+        <div style="flex-basis: 5vh;" class="flex-row"><h1>Door</h1></div>
+        <div style="flex-basis: 5vh;" class="flex-row"><h1 id="status"></h1></div>
         <div class="flex-row">
             <form action="/api/door/open" target="dummyframe" method="get">
                 <input type="hidden" name="entry" value="OPENED: OVERRIDE BY UI"/>

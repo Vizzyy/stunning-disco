@@ -15,8 +15,8 @@
     <iframe name="dummyframe"></iframe>
 
     <div class="flex-column">
-        <h1> Outside </h1>
-        <h1 id="status"></h1>
+        <h1 style="flex-basis: 5vh;" > Outside </h1>
+        <h1 style="flex-basis: 5vh;" id="status"></h1>
         <div class="flex-row">
             <form action="/api/outside/arrange/clear" target="dummyframe" method="get">
                 <input class="generalButton" type="submit" value="Clear" onclick="getStatus(true)">
