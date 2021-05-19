@@ -15,10 +15,6 @@
 
     <div class="flex-column">
         <div style="flex-basis: 5vh;" class="flex-row">
-            <h1 style="width: 30vw; text-align: center;" >Xmas</h1>
-            <h1 style="width: 30vw; text-align: center;" >Tree</h1>
-        </div>
-        <div style="flex-basis: 5vh;" class="flex-row">
             <h1 style="width: 30vw; text-align: center;" id="xmasStatus"></h1>
             <h1 style="width: 30vw; text-align: center;" id="treeStatus"></h1>
         </div>
@@ -43,11 +39,50 @@
                 <input class="generalButton" type="submit" onclick="getTreeStatus()" value="OFF">
             </form>
         </div>
+        <div style="flex-basis: 5vh;" class="flex-row">
+            <h1 style="width: 30vw; text-align: center;" >Everything On</h1>
+            <h1 style="width: 30vw; text-align: center;" >Everything Off</h1>
+        </div>
+        <div class="flex-row">
+            <form target="dummyframe" method="get">
+                <input type="hidden" name="status" value="false" />
+                <input class="generalButton" type="submit" onclick="evening()" value="ON">
+            </form>
+            <form target="dummyframe" method="get">
+                <input type="hidden" name="status" value="false" />
+                <input class="generalButton" type="submit" onclick="bedtime()" value="OFF">
+            </form>
+        </div>
     </div>
 
 
 </body>
 <script>
+    function bedtime(){
+        [
+            "/api/lights/light2?status=false",
+            "/api/lights/tree/light2?status=false",
+            "/api/outside/arrange/clear",
+            "/api/inside/arrange/clear"
+        ].forEach(path => {
+            let xhttp = new XMLHttpRequest();
+            xhttp.open("GET", path, true);
+            xhttp.send();
+        });
+    }
+
+    function evening(){
+        [
+            "/api/lights/light2?status=true",
+            "/api/lights/tree/light2?status=true",
+            "/api/outside/arrange/rainbowCycle",
+            "/api/inside/arrange/rainbowCycle"
+        ].forEach(path => {
+            let xhttp = new XMLHttpRequest();
+            xhttp.open("GET", path, true);
+            xhttp.send();
+        });
+    }
 
     function getTreeStatus(delay=true){
         let path = "/api/lights/tree/status";
@@ -77,7 +112,7 @@
         document.getElementById(id).innerHTML = "<div class=\"loader\"></div>";
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-                document.getElementById(id).innerHTML = "XMAS: " + (this.response.includes('"light2":"true"') ? "ON" : "OFF");
+                document.getElementById(id).innerHTML = "Xmas: " + (this.response.includes('"light2":"true"') ? "ON" : "OFF");
             } else {
                 document.getElementById(id).innerHTML = "{ No Status Available }";
             }
