@@ -16,9 +16,8 @@
         <div class="flex-row">
             <input type="submit" value="Previous" class="generalButton" onclick="previous()">
             <div class="flex-column">
-                <div> <br> <br>  </div>
-                <div id="timestamp"></div>
-                <div> <br> </div>
+                <div id="timestampDate" style="font-size: 30px;"></div>
+                <div id="timestampTime" style="font-size: 30px;"></div>
             </div>
             <input type="submit" value="Next" class="generalButton" onclick="next()">
         </div>
@@ -45,8 +44,10 @@
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 let responseObject = JSON.parse(this.response)
-                document.getElementById("image").innerHTML = "<img class=\"motionImage\" src=\""+responseObject.signed_url+"\">";
-                document.getElementById("timestamp").innerHTML = responseObject.timestamp;
+                document.getElementById("image").innerHTML = "<img class=\"motionImage\" src=\"" + responseObject.signed_url + "\">";
+                let splitTimestamp = responseObject.timestamp.split('-')
+                document.getElementById("timestampDate").innerHTML = `${splitTimestamp[1]}/${splitTimestamp[2]}/${splitTimestamp[0]}`
+                document.getElementById("timestampTime").innerHTML = splitTimestamp[3]
             }
         };
         xhttp.open("GET", path, true);
