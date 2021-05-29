@@ -51,20 +51,27 @@ def lambda_handler(event=None, context=None):
         asset_name = bucket_contents[offset]["Key"]
         signed_url = create_signed_url(asset_name)
 
+        body = {
+            'signed_url': signed_url,
+            'timestamp': asset_name.split('-event')[0]
+        }
+
         result = {
             'statusCode': 200,
             'isBase64Encoded': False,
             'headers': {
                 'Content-Type': 'image/gif'
             },
-            'body': signed_url,
+            'body': json.dumps(body),
         }
 
-        sqs_send(sqs_queue, proxy_host, start_time, proxy_host+event["path"], True)
+        if os.environ.get('ENV') != "dev":
+            sqs_send(sqs_queue, proxy_host, start_time, proxy_host+event["path"], True)
 
         return result
     except Exception as e:
-        sqs_send(sqs_queue, proxy_host, start_time, proxy_host+event["path"], False)
+        if os.environ.get('ENV') != "dev":
+            sqs_send(sqs_queue, proxy_host, start_time, proxy_host+event["path"], False)
         print(e)
         raise
 

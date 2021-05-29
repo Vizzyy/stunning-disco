@@ -11,7 +11,7 @@ input {
 
 body {
   background-color: midnightblue;
-  color: white;
+  color: whitesmoke;
 }
 
 iframe {
@@ -36,7 +36,7 @@ iframe {
   height: 10vh;
   width: 30vw;
   background: black;
-  color: white;
+  color: whitesmoke;
 }
 
 .navbar {
@@ -48,12 +48,12 @@ iframe {
   height: 10vh;
   font-size: 4em;
   background: black;
-  color: white;
+  color: whitesmoke;
 }
 
 .loader {
-  border: 16px solid #f3f3f3; /* Light grey */
-  border-top: 16px solid #3f96f8; /* Blue */
+  border: 16px solid whitesmoke; /* Light grey */
+  border-top: 16px solid midnightblue; /* Blue */
   border-radius: 50%;
   width: 120px;
   height: 120px;
