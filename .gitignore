@@ -6,3 +6,7 @@ scripts/upload_web_src.sh
 *.crt
 *.zip
 *__pycache__
+*.tfvars
+*.tfstate*
+*.hcl
+*.terraform/
