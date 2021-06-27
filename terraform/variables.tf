@@ -1,9 +1,9 @@
-variable "ssm_resources" {
-  type    = string
-  default = "*"
-}
-
-variable "sqs_resources" {
-  type    = string
-  default = "*"
-}
+variable "ssm_resources" {}
+variable "sqs_resources" {}
+variable "restApiName" {}
+variable "apiHostCert" {}
+variable "domainName" {}
+variable "trustStoreUri" {}
+variable "hostedZoneId" {}
+//variable "ddb_resources" {}
+variable "dynamo_table_name" {}
