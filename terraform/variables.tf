@@ -5,5 +5,6 @@ variable "apiHostCert" {}
 variable "domainName" {}
 variable "trustStoreUri" {}
 variable "hostedZoneId" {}
-//variable "ddb_resources" {}
+variable "s3_resources" {}
 variable "dynamo_table_name" {}
+variable "rootEndpointUri" {}

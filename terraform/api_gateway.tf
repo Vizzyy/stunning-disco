@@ -9,7 +9,11 @@ resource "aws_api_gateway_rest_api" "api_gateway_rest_api" {
 }
 
 resource "aws_api_gateway_deployment" "api_gateway_deployement" {
-  depends_on = [aws_api_gateway_method.api_proxy_endpoint]
+  depends_on = [
+    aws_api_gateway_method.api_proxy_endpoint,
+    aws_api_gateway_method.root_endpoint,
+    aws_api_gateway_method.logs_endpoint
+  ]
 
   rest_api_id = aws_api_gateway_rest_api.api_gateway_rest_api.id
 
@@ -22,6 +26,21 @@ resource "aws_api_gateway_stage" "api_gateway_stage" {
   deployment_id = aws_api_gateway_deployment.api_gateway_deployement.id
   rest_api_id   = aws_api_gateway_rest_api.api_gateway_rest_api.id
   stage_name    = "Prod"
+
+}
+
+resource "aws_api_gateway_method_settings" "all" {
+  rest_api_id = aws_api_gateway_rest_api.api_gateway_rest_api.id
+  stage_name  = aws_api_gateway_stage.api_gateway_stage.stage_name
+  method_path = "*/*"
+
+  settings {
+    metrics_enabled = false // Detailed CloudWatch Metrics (Costs extra)
+    data_trace_enabled = true
+    throttling_burst_limit = 10
+    throttling_rate_limit = 10
+    logging_level   = "INFO"
+  }
 }
 
 resource "aws_api_gateway_domain_name" "api_gateway_domain_name" {
