@@ -48,18 +48,13 @@ resource "aws_iam_role" "s3_static_resources_role" {
   name = "s3_static_resources_role"
   assume_role_policy = file("data/api_gateway_trust_relationship.json")
   managed_policy_arns = [
-    aws_iam_policy.api_logs_lambda_exec_policy.arn
+    aws_iam_policy.s3_static_resources_policy.arn,
   ]
-}
-
-data "template_file" "s3_static_resources_policy_template" {
-  template = file("data/s3_static_resources_role.json.tpl")
-  vars = {
-    s3_resources = var.s3_resources
-  }
 }
 
 resource "aws_iam_policy" "s3_static_resources_policy" {
   name = "s3_static_resources_policy"
-  policy = data.template_file.s3_static_resources_policy_template.rendered
+  policy = templatefile("data/s3_static_resources_role.json", {
+    s3_resources = var.s3_resources
+  })
 }

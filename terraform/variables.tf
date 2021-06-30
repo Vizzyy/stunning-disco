@@ -8,3 +8,4 @@ variable "hostedZoneId" {}
 variable "s3_resources" {}
 variable "dynamo_table_name" {}
 variable "rootEndpointUri" {}
+variable "resource_bucket" {}

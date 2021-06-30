@@ -20,14 +20,9 @@ resource "aws_iam_role" "api_logs_lambda_role" {
   ]
 }
 
-data "template_file" "api_logs_lambda_exec_policy_template" {
-  template = file("data/lambda_api_logs_exec_role.json.tpl")
-  vars = {
-    ddb_resources = aws_dynamodb_table.home_api_dynamo_db.arn
-  }
-}
-
 resource "aws_iam_policy" "api_logs_lambda_exec_policy" {
   name = "api_logs_lambda_exec_policy"
-  policy = data.template_file.api_logs_lambda_exec_policy_template.rendered
+  policy = templatefile("data/lambda_api_logs_exec_role.json", {
+    ddb_resources = aws_dynamodb_table.home_api_dynamo_db.arn
+  })
 }

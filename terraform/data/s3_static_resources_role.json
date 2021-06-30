@@ -4,10 +4,10 @@
     {
       "Sid": "Stmt1624836154393",
       "Action": [
-        "s3:*"
+        "s3:GetObject"
       ],
       "Effect": "Allow",
-      "Resource": "*"
+      "Resource": "${s3_resources}"
     }
   ]
 }

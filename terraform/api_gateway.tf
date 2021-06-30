@@ -12,7 +12,8 @@ resource "aws_api_gateway_deployment" "api_gateway_deployement" {
   depends_on = [
     aws_api_gateway_method.api_proxy_endpoint,
     aws_api_gateway_method.root_endpoint,
-    aws_api_gateway_method.logs_endpoint
+    aws_api_gateway_method.logs_endpoint,
+    aws_api_gateway_method.static_proxy_endpoint
   ]
 
   rest_api_id = aws_api_gateway_rest_api.api_gateway_rest_api.id

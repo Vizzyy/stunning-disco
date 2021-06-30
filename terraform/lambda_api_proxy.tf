@@ -20,15 +20,10 @@ resource "aws_iam_role" "api_proxy_lambda_role" {
   ]
 }
 
-data "template_file" "api_proxy_lambda_exec_policy_template" {
-  template = file("data/lambda_api_proxy_exec_role.json.tpl")
-  vars = {
-    ssm_resources = var.ssm_resources,
-    sqs_resources = var.sqs_resources
-  }
-}
-
 resource "aws_iam_policy" "api_proxy_lambda_exec_policy" {
   name = "api_proxy_lambda_exec_policy"
-  policy = data.template_file.api_proxy_lambda_exec_policy_template.rendered
+  policy = templatefile("data/lambda_api_proxy_exec_role.json", {
+    ssm_resources = var.ssm_resources,
+    sqs_resources = var.sqs_resources
+  })
 }
