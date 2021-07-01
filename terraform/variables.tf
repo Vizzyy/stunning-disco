@@ -9,3 +9,10 @@ variable "s3_resources" {}
 variable "dynamo_table_name" {}
 variable "rootEndpointUri" {}
 variable "resource_bucket" {}
+variable "lambda_layers_bucket" {}
+variable "lambda_layer_pymysql_artifact" {}
+variable "lambda_layer_sqs_artifact" {}
+variable "lambda_layer_ssm_artifact" {}
+variable "ssm_path" {}
+variable "alarm_topic" {}
+variable "door_stream_path" {}

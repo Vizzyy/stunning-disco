@@ -1,9 +1,25 @@
 resource "aws_lambda_function" "api_proxy_lambda" {
+  depends_on = [
+    aws_lambda_layer_version.lambda_layer_sqs,
+    aws_lambda_layer_version.lambda_layer_ssm
+  ]
   function_name = "api_proxy_lambda"
   filename = "../http-request.zip"
   handler = "http-request.lambda_handler"
   runtime = "python3.8"
   role = aws_iam_role.api_proxy_lambda_role.arn
+  layers = [
+    aws_lambda_layer_version.lambda_layer_sqs.arn,
+    aws_lambda_layer_version.lambda_layer_ssm.arn
+  ]
+  environment {
+    variables = {
+      SSM_PATH = var.ssm_path
+      TZ = "America/New_York"
+    }
+  }
+  timeout = 30
+  memory_size = 128
 }
 
 resource "aws_cloudwatch_log_group" "api_proxy_lambda_logs" {

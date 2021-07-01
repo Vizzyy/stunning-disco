@@ -1,5 +1,5 @@
-resource "aws_cloudwatch_metric_alarm" "api_logs_lambda_alarm" {
-  alarm_name                = "api_logs_lambda_alarm"
+resource "aws_cloudwatch_metric_alarm" "motion_events_lambda_alarm" {
+  alarm_name                = "motion_events_lambda_alarm"
   comparison_operator       = "GreaterThanOrEqualToThreshold"
   datapoints_to_alarm       = "1" # this is the M in "M out of N data points to alarm"
   evaluation_periods        = "5" # this is the N in "M out of N data points to alarm"
@@ -14,6 +14,6 @@ resource "aws_cloudwatch_metric_alarm" "api_logs_lambda_alarm" {
 
   dimensions                = {
     name = "FunctionName"
-    value = aws_lambda_function.api_logs_lambda.function_name
+    value = aws_lambda_function.motion_events_lambda.function_name
   }
 }

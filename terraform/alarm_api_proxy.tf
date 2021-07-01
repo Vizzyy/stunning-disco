@@ -10,6 +10,7 @@ resource "aws_cloudwatch_metric_alarm" "api_proxy_lambda_alarm" {
   threshold                 = "2"
   alarm_description         = "Alarm if 1 bad data point (of >= 2 errors each) within 5 mins"
   treat_missing_data        = "notBreaching"
+  alarm_actions = [var.alarm_topic]
 
   dimensions                = {
     name = "FunctionName"
