@@ -13,7 +13,13 @@ resource "aws_api_gateway_deployment" "api_gateway_deployement" {
     aws_api_gateway_method.api_proxy_endpoint,
     aws_api_gateway_method.root_endpoint,
     aws_api_gateway_method.logs_endpoint,
-    aws_api_gateway_method.static_proxy_endpoint
+    aws_api_gateway_method.static_proxy_endpoint,
+    aws_api_gateway_integration.api_proxy_endpoint_integration,
+    aws_api_gateway_integration.logs_endpoint_integration,
+    aws_api_gateway_integration.root_endpoint_integration,
+    aws_api_gateway_integration.static_proxy_endpoint_integration,
+    aws_api_gateway_integration.streams_door_endpoint_integration,
+    aws_api_gateway_integration.streams_motion_endpoint_integration
   ]
 
   rest_api_id = aws_api_gateway_rest_api.api_gateway_rest_api.id
@@ -24,10 +30,15 @@ resource "aws_api_gateway_deployment" "api_gateway_deployement" {
 }
 
 resource "aws_api_gateway_stage" "api_gateway_stage" {
+  depends_on = [aws_cloudwatch_log_group.api_gateway_rest_api_log_group]
   deployment_id = aws_api_gateway_deployment.api_gateway_deployement.id
   rest_api_id   = aws_api_gateway_rest_api.api_gateway_rest_api.id
   stage_name    = "Prod"
+}
 
+resource "aws_cloudwatch_log_group" "api_gateway_rest_api_log_group" {
+  name = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.api_gateway_rest_api.id}/Prod"
+  retention_in_days = 7
 }
 
 resource "aws_api_gateway_method_settings" "all" {

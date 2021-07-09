@@ -27,7 +27,7 @@ resource "aws_api_gateway_integration" "streams_motion_endpoint_integration" {
   type                    = "AWS_PROXY"
   integration_http_method = "POST"
   uri                     = aws_lambda_function.motion_events_lambda.invoke_arn
-  credentials             = aws_iam_role.s3_static_resources_role.arn
+  credentials             = aws_iam_role.api_gateway_lambda_integrations.arn
 }
 
 
@@ -53,4 +53,5 @@ resource "aws_api_gateway_integration" "streams_door_endpoint_integration" {
   type                    = "AWS_PROXY"
   integration_http_method = "POST"
   uri                     = aws_lambda_function.redirect_lambda.invoke_arn
+  credentials             = aws_iam_role.api_gateway_lambda_integrations.arn
 }

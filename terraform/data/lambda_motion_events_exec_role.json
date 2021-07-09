@@ -14,6 +14,13 @@
       ],
       "Effect": "Allow",
       "Resource": "${sqs_resources}"
+    },
+    {
+      "Action": [
+        "s3:ListObjects"
+      ],
+      "Effect": "Allow",
+      "Resource": "${s3_resources}"
     }
   ]
 }

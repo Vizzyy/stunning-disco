@@ -3,11 +3,17 @@ resource "aws_lambda_function" "api_logs_lambda" {
   filename = "../api-logs.zip"
   handler = "api-logs.lambda_handler"
   runtime = "python3.8"
-  role = aws_iam_role.api_proxy_lambda_role.arn
+  role = aws_iam_role.api_logs_lambda_role.arn
+  environment {
+    variables = {
+      TableName = aws_dynamodb_table.home_api_dynamo_db.name
+      TZ = "America/New_York"
+    }
+  }
 }
 
 resource "aws_cloudwatch_log_group" "api_logs_lambda_logs" {
-  name              = "/aws/lambda/home/api_logs_lambda"
+  name              = "/aws/lambda/api_logs_lambda"
   retention_in_days = 7
 }
 

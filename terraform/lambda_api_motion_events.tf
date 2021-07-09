@@ -4,7 +4,7 @@ resource "aws_lambda_function" "motion_events_lambda" {
     aws_lambda_layer_version.lambda_layer_ssm,
     aws_lambda_layer_version.lambda_layer_pymysql
   ]
-  function_name = "motion_events_lambda"
+  function_name = "api_motion_events_lambda"
   filename = "../serve-motion.zip"
   handler = "serve-motion.lambda_handler"
   runtime = "python3.8"
@@ -25,7 +25,7 @@ resource "aws_lambda_function" "motion_events_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "motion_events_lambda_logs" {
-  name              = "/aws/lambda/home/motion_events_lambda"
+  name              = "/aws/lambda/motion_events_lambda"
   retention_in_days = 7
 }
 
@@ -42,6 +42,7 @@ resource "aws_iam_policy" "motion_events_lambda_exec_policy" {
   name = "motion_events_lambda_exec_policy"
   policy = templatefile("data/lambda_motion_events_exec_role.json", {
     ssm_resources = var.ssm_resources,
-    sqs_resources = var.sqs_resources
+    sqs_resources = var.sqs_resources,
+    s3_resources = var.s3_resources
   })
 }

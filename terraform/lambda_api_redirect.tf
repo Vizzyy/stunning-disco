@@ -1,9 +1,9 @@
 resource "aws_lambda_function" "redirect_lambda" {
-  function_name = "redirect_lambda"
-  filename = "../serve-motion.zip"
-  handler = "serve-motion.lambda_handler"
+  function_name = "api_redirect_lambda"
+  filename = "../redirect.zip"
+  handler = "redirect.lambda_handler"
   runtime = "python3.8"
-  role = aws_iam_role.motion_events_lambda_role.arn
+  role = aws_iam_role.redirect_lambda_role.arn
   environment {
     variables = {
       REDIRECT_URL = var.door_stream_path
@@ -15,7 +15,7 @@ resource "aws_lambda_function" "redirect_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "redirect_lambda_logs" {
-  name              = "/aws/lambda/home/redirect_lambda"
+  name              = "/aws/lambda/redirect_lambda"
   retention_in_days = 7
 }
 
