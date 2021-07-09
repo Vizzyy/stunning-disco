@@ -43,6 +43,6 @@ resource "aws_iam_policy" "motion_events_lambda_exec_policy" {
   policy = templatefile("data/lambda_motion_events_exec_role.json", {
     ssm_resources = var.ssm_resources,
     sqs_resources = var.sqs_resources,
-    s3_resources = var.s3_resources
+    s3_resources = var.motion_events_bucket
   })
 }

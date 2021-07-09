@@ -5,7 +5,7 @@ variable "apiHostCert" {}
 variable "domainName" {}
 variable "trustStoreUri" {}
 variable "hostedZoneId" {}
-variable "s3_resources" {}
+variable "static_web_resources_bucket" {}
 variable "dynamo_table_name" {}
 variable "rootEndpointUri" {}
 variable "resource_bucket" {}
@@ -16,3 +16,4 @@ variable "lambda_layer_ssm_artifact" {}
 variable "ssm_path" {}
 variable "alarm_topic" {}
 variable "door_stream_path" {}
+variable "motion_events_bucket" {}

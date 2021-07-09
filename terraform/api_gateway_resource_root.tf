@@ -55,6 +55,6 @@ resource "aws_iam_role" "s3_static_resources_role" {
 resource "aws_iam_policy" "s3_static_resources_policy" {
   name = "s3_static_resources_policy"
   policy = templatefile("data/s3_static_resources_role.json", {
-    s3_resources = var.s3_resources
+    s3_resources = "${var.static_web_resources_bucket}/*"
   })
 }

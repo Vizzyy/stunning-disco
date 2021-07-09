@@ -17,10 +17,14 @@
     },
     {
       "Action": [
-        "s3:ListObjects"
+        "s3:ListBucket",
+        "s3:getObject"
       ],
       "Effect": "Allow",
-      "Resource": "${s3_resources}"
+      "Resource": [
+        "${s3_resources}",
+        "${s3_resources}/*"
+      ]
     }
   ]
 }
