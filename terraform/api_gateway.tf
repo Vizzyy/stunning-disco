@@ -120,3 +120,13 @@ resource "aws_iam_policy" "api_gateway_lambda_integrations_policy" {
     ]
   })
 }
+
+resource "aws_api_gateway_authorizer" "api_gateway_lambda_authorizer" {
+  name                   = "api_gateway_lambda_authorizer"
+  rest_api_id            = aws_api_gateway_rest_api.api_gateway_rest_api.id
+  authorizer_uri         = aws_lambda_function.authorizer_lambda.invoke_arn
+  authorizer_credentials = aws_iam_role.authorizer_lambda_role.arn
+  type = "REQUEST"
+  authorizer_result_ttl_in_seconds = 0
+  identity_source = ""
+}
