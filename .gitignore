@@ -8,5 +8,4 @@ scripts/upload_web_src.sh
 *__pycache__
 *.tfvars
 *.tfstate*
-*.hcl
 *.terraform/

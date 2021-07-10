@@ -6,6 +6,12 @@ terraform {
       source = "hashicorp/aws"
     }
   }
+
+  backend "s3" {
+    bucket = "vizzyy-terraform"
+    key    = "stunning-disqo/terraform.tfstate"
+    region = "us-east-1"
+  }
 }
 
 provider "aws" {
