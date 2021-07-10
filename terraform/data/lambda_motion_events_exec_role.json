@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "ssm:GetParametersByPath"
+      ],
+      "Effect": "Allow",
+      "Resource": "${ssm_resources}"
+    },
+    {
+      "Action": [
+        "sqs:SendMessage"
+      ],
+      "Effect": "Allow",
+      "Resource": "${sqs_resources}"
+    },
+    {
+      "Action": [
+        "s3:ListBucket",
+        "s3:getObject"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "${s3_resources}",
+        "${s3_resources}/*"
+      ]
+    }
+  ]
+}
