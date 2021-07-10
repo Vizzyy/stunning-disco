@@ -16,7 +16,8 @@ resource "aws_api_gateway_method" "streams_motion_endpoint" {
   rest_api_id     = aws_api_gateway_rest_api.api_gateway_rest_api.id
   resource_id     = aws_api_gateway_resource.streams_motion_resource.id
   http_method     = "GET"
-  authorization   = "NONE"
+  authorization   = "CUSTOM"
+  authorizer_id   = aws_api_gateway_authorizer.api_gateway_lambda_authorizer.id
   operation_name  = "Serve motion asset by invoking lambda"
 }
 
@@ -42,7 +43,8 @@ resource "aws_api_gateway_method" "streams_door_endpoint" {
   rest_api_id     = aws_api_gateway_rest_api.api_gateway_rest_api.id
   resource_id     = aws_api_gateway_resource.streams_door_resource.id
   http_method     = "GET"
-  authorization   = "NONE"
+  authorization   = "CUSTOM"
+  authorizer_id   = aws_api_gateway_authorizer.api_gateway_lambda_authorizer.id
   operation_name  = "Invoke door stream"
 }
 

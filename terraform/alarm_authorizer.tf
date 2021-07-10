@@ -14,6 +14,6 @@ resource "aws_cloudwatch_metric_alarm" "authorizer_lambda_alarm" {
 
   dimensions                = {
     name = "FunctionName"
-    value = aws_lambda_function.authorizer_lambda.function_name
+    value = aws_lambda_function.api_authorizer_lambda.function_name
   }
 }

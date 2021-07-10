@@ -1,9 +1,9 @@
-resource "aws_lambda_function" "authorizer_lambda" {
+resource "aws_lambda_function" "api_authorizer_lambda" {
   function_name = "api_authorizer_lambda"
   filename = "../authorizer.zip"
   handler = "authorizer.lambda_handler"
   runtime = "python3.8"
-  role = aws_iam_role.redirect_lambda_role.arn
+  role = aws_iam_role.api_authorizer_lambda_role.arn
   environment {
     variables = {
       TableName = var.dynamo_table_name
@@ -14,15 +14,24 @@ resource "aws_lambda_function" "authorizer_lambda" {
   memory_size = 128
 }
 
-resource "aws_cloudwatch_log_group" "authorizer_lambda_logs" {
-  name              = "/aws/lambda/authorizer_lambda"
+resource "aws_cloudwatch_log_group" "api_authorizer_lambda_logs" {
+  name              = "/aws/lambda/api_authorizer_lambda"
   retention_in_days = 7
 }
 
-resource "aws_iam_role" "authorizer_lambda_role" {
-  name = "authorizer_lambda_role"
-  assume_role_policy = file("data/lambda_trust_relationship.json")
+resource "aws_iam_role" "api_authorizer_lambda_role" {
+  name = "api_authorizer_lambda_role"
+  assume_role_policy = file("data/authorizer_trust_relationship.json")
   managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+    aws_iam_policy.api_authorizer_lambda_exec_policy.arn
   ]
+}
+
+resource "aws_iam_policy" "api_authorizer_lambda_exec_policy" {
+  name = "api_authorizer_lambda_exec_policy"
+  policy = templatefile("data/lambda_api_authorizer_exec_role.json", {
+//    ssm_resources = var.ssm_resources,
+//    sqs_resources = var.sqs_resources
+  })
 }

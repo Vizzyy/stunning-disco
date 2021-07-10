@@ -14,7 +14,8 @@ resource "aws_api_gateway_method" "static_proxy_endpoint" {
   rest_api_id     = aws_api_gateway_rest_api.api_gateway_rest_api.id
   resource_id     = aws_api_gateway_resource.static_proxy_resource.id
   http_method     = "GET"
-  authorization   = "NONE"
+  authorization   = "CUSTOM"
+  authorizer_id   = aws_api_gateway_authorizer.api_gateway_lambda_authorizer.id
   operation_name  = "Static resource proxy endpoint"
   request_parameters = {
     "method.request.path.proxy" = true

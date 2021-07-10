@@ -2,7 +2,8 @@ resource "aws_api_gateway_method" "root_endpoint" {
   rest_api_id     = aws_api_gateway_rest_api.api_gateway_rest_api.id
   resource_id     = aws_api_gateway_rest_api.api_gateway_rest_api.root_resource_id
   http_method     = "GET"
-  authorization   = "NONE"
+  authorization   = "CUSTOM"
+  authorizer_id   = aws_api_gateway_authorizer.api_gateway_lambda_authorizer.id
   operation_name  = "Root endpoint"
 }
 
