@@ -25,7 +25,7 @@ resource "aws_lambda_function" "motion_events_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "motion_events_lambda_logs" {
-  name              = "/aws/lambda/motion_events_lambda"
+  name              = "/aws/lambda/api_motion_events_lambda"
   retention_in_days = 7
 }
 

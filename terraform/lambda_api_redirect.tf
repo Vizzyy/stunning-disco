@@ -15,7 +15,7 @@ resource "aws_lambda_function" "redirect_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "redirect_lambda_logs" {
-  name              = "/aws/lambda/redirect_lambda"
+  name              = "/aws/lambda/api_redirect_lambda"
   retention_in_days = 7
 }
 
