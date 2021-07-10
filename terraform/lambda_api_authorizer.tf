@@ -24,14 +24,7 @@ resource "aws_iam_role" "api_authorizer_lambda_role" {
   assume_role_policy = file("data/authorizer_trust_relationship.json")
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-    aws_iam_policy.api_authorizer_lambda_exec_policy.arn
+    aws_iam_policy.api_gateway_lambda_integrations_policy.arn,
+    aws_iam_policy.api_logs_lambda_exec_policy.arn
   ]
-}
-
-resource "aws_iam_policy" "api_authorizer_lambda_exec_policy" {
-  name = "api_authorizer_lambda_exec_policy"
-  policy = templatefile("data/lambda_api_authorizer_exec_role.json", {
-//    ssm_resources = var.ssm_resources,
-//    sqs_resources = var.sqs_resources
-  })
 }
