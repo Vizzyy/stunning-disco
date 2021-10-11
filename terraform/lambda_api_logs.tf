@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "api_logs_lambda" {
   function_name = "api_logs_lambda"
-  filename = "../api-logs.zip"
-  handler = "api-logs.lambda_handler"
+  filename = "../api_logs_lambda.zip"
+  handler = "api_logs_lambda.lambda_handler"
   runtime = "python3.8"
   role = aws_iam_role.api_logs_lambda_role.arn
   environment {

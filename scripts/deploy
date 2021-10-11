@@ -24,6 +24,8 @@ web_src_bucket = os.environ.get('WEB_SRC_BUCKET')
 def arguments():
     parser = argparse.ArgumentParser(description='Parameterized deployment script for Stunning-Disco.')
     parser.add_argument('--lambdas',    '-l',  help='Deploy lambda code.', action='store_true')
+    parser.add_argument('--build',      '-b',  help='Build and zip lambda code.', action='store_true')
+    parser.add_argument('--clean',      '-c',  help='Clean up artifacts.', action='store_true')
     parser.add_argument('--layers',     '-y',  help='Deploy lambda layers.', action='store_true')
     parser.add_argument('--web',        '-w',  help='Deploy front-end web-resources.', action='store_true')
     parser.add_argument('--sam',        '-s',  help='Package and deploy SAM template.', action='store_true')
@@ -135,6 +137,12 @@ def delete_lambda_zips(lambda_zips):
     print("Deleted lambda zip files.")
 
 
+def cleanup():
+    zip_files = glob.glob(f'*.zip')
+    delete_lambda_zips(zip_files)
+    print("Cleaned up.")
+
+
 def get_rest_api(api_name):
     response = api_client.get_rest_apis()
     for api in response["items"]:
@@ -220,6 +228,10 @@ if __name__ == "__main__":
         deploy_sam_resources(args.debug)
     elif args.lambdas or args.all:
         deploy_lambda_resources(args.debug)
+    if args.clean:
+        cleanup()
+    if args.build:
+        zip_lambda_resources(args.debug)
     if args.api or args.sam or args.all:
         deploy_gateway_stage(args.debug)
 

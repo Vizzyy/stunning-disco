@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "redirect_lambda" {
   function_name = "api_redirect_lambda"
-  filename = "../redirect.zip"
-  handler = "redirect.lambda_handler"
+  filename = "../api_redirect_lambda.zip"
+  handler = "api_redirect_lambda.lambda_handler"
   runtime = "python3.8"
   role = aws_iam_role.redirect_lambda_role.arn
   environment {

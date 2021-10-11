@@ -5,8 +5,8 @@ resource "aws_lambda_function" "motion_events_lambda" {
     aws_lambda_layer_version.lambda_layer_pymysql
   ]
   function_name = "api_motion_events_lambda"
-  filename = "../serve-motion.zip"
-  handler = "serve-motion.lambda_handler"
+  filename = "../api_motion_events_lambda.zip"
+  handler = "api_motion_events_lambda.lambda_handler"
   runtime = "python3.8"
   role = aws_iam_role.motion_events_lambda_role.arn
   layers = [
