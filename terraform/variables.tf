@@ -17,3 +17,4 @@ variable "ssm_path" {}
 variable "alarm_topic" {}
 variable "door_stream_path" {}
 variable "motion_events_bucket" {}
+variable "trustStoreVersion" {}

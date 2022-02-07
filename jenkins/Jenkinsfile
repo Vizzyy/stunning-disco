@@ -1,0 +1,77 @@
+#! groovy
+
+String serviceName = "stunning-disco"
+currentBuild.displayName = "$serviceName [$currentBuild.number]"
+
+pipeline {
+    agent any
+    options {
+        buildDiscarder(logRotator(numToKeepStr:'10'))
+        disableConcurrentBuilds()
+        quietPeriod(1)
+        timestamps()
+    }
+    parameters {
+        booleanParam(name: 'Build', defaultValue: true, description: 'Build latest artifact')
+        booleanParam(name: 'Terraform', defaultValue: true, description: 'Deploy Web artifact')
+        booleanParam(name: 'Test', defaultValue: true, description: 'Run test suite')
+    }
+    stages {
+        stage("Checkout") {
+            steps {
+                script {
+                    prTools.checkoutBranch(ISSUE_NUMBER, "vizzyy/$serviceName")
+                    commitHash = env.GIT_COMMIT.substring(0,7)
+                }
+            }
+        }
+
+        stage("Build") {
+            when {
+                expression {
+                    return env.Build == "true"
+                }
+            }
+            steps {
+                script {
+                    sh("python3 deploy.py -o -b")
+                }
+            }
+        }
+
+        stage("Terraform") {
+            when {
+                expression {
+                    return env.Terraform == "true"
+                }
+            }
+            steps {
+                script {
+                    sh("""
+                    cd terraform;
+                    cp ~/$serviceName.tfvars ./terraform.tfvars;
+                    tfswitch;
+                    terraform init;
+                    terraform apply --auto-approve;
+                    """)
+                }
+            }
+        }
+
+    }
+    post {
+        success {
+            script {
+                echo "SUCCESS"
+            }
+        }
+        failure {
+            script {
+                echo "FAILURE"
+            }
+        }
+        cleanup { // Cleanup post-flow always executes last
+            deleteDir()
+        }
+    }
+}

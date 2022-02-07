@@ -9,8 +9,8 @@ import shutil
 import boto3
 import zipfile
 import subprocess
-
 import sys
+
 
 s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda')
@@ -18,7 +18,9 @@ api_client = boto3.client('apigateway')
 cfn_client = boto3.client('cloudformation')
 log_client = boto3.client('logs')
 stack_name = "stunning-disco"
-web_src_bucket = os.environ.get('WEB_SRC_BUCKET')
+web_src_bucket = "home.vizzyy.com" #os.environ.get('WEB_SRC_BUCKET')
+packaging_bucket = "vizzyy-packaging"
+project_root = sys.path[0]
 
 
 def arguments():
@@ -28,7 +30,6 @@ def arguments():
     parser.add_argument('--clean',      '-c',  help='Clean up artifacts.', action='store_true')
     parser.add_argument('--layers',     '-y',  help='Deploy lambda layers.', action='store_true')
     parser.add_argument('--web',        '-w',  help='Deploy front-end web-resources.', action='store_true')
-    parser.add_argument('--sam',        '-s',  help='Package and deploy SAM template.', action='store_true')
     parser.add_argument('--api',        '-g',  help='Deploy API Gateway stage.', action='store_true')
     parser.add_argument('--all',        '-a',  help='Deploy all resources.', action='store_true')
     parser.add_argument('--delete',     '-d',  help='Delete existing stack resources.', action='store_true')
@@ -41,27 +42,29 @@ def deploy_web_resource(debug=False):
     for file_path in web_src_files:
         file_name = file_path.split('/')[-1]
         s3_client.upload_file(file_path, web_src_bucket, file_name)
-        if debug:
-            print(f"Deployed resource: {file_path} >> s3://{web_src_bucket}/{file_name}")
+        if debug: print(f"Deployed resource: {file_path} >> s3://{web_src_bucket}/{file_name}")
     print("Web resources uploaded.")
 
 
-def zip_lambda_resources(debug=False):
-    lambda_src_files = glob.glob(f'lambdas/*')
+def build_lambda_resources(debug=False):
+    os.makedirs(f"{project_root}/build", exist_ok=True)
+    lambda_src_files = glob.glob(f'{project_root}/lambdas/*')
     if debug: print(f"lambda_src_files: {lambda_src_files}")
     lambda_zip_files = []
     for lambda_source_path in lambda_src_files:
         lambda_file_name = lambda_source_path.split('/')[-1]
         lambda_zip_name = f'{lambda_file_name.split(".py")[0]}.zip'
-        with zipfile.ZipFile(lambda_zip_name, 'w') as lambda_function_zip:
+        with zipfile.ZipFile(f"{project_root}/build/{lambda_zip_name}", 'w') as lambda_function_zip:
             lambda_function_zip.write(lambda_source_path, arcname=lambda_file_name)
         lambda_zip_files.append(lambda_zip_name)
+        s3_client.upload_file(f"{project_root}/build/{lambda_zip_name}", packaging_bucket, lambda_zip_name)
+        if debug: print(f"Deployed resource: {lambda_zip_name} >> s3://{packaging_bucket}/{lambda_zip_name}")
     print(f"Zipped lambda resources: {lambda_zip_files}")
     return lambda_zip_files
 
 
 def deploy_lambda_layers(debug=False):
-    lambda_layers = glob.glob(f'layers/*')
+    lambda_layers = glob.glob(f'../layers/*')
     print(f"Packaging lambda layers: {lambda_layers}")
     for layer in lambda_layers:
         layer_name = layer.split('/')[-1]
@@ -112,7 +115,7 @@ def delete_lambda_layers(debug=False):
 
 
 def deploy_lambda_resources(debug=False):
-    lambda_zip_files = zip_lambda_resources()
+    lambda_zip_files = build_lambda_resources()
 
     for lambda_source_path in lambda_zip_files:
         lambda_zip_name = lambda_source_path.split('/')[-1]
@@ -163,76 +166,22 @@ def deploy_gateway_stage(debug=False):
     print(f"Deployed gateway stage.")
 
 
-def delete_cfn_resources(debug=False):
-    api_data = get_rest_api(stack_name) # Needs to go before stack is deleted
-
-    response = cfn_client.delete_stack(StackName=stack_name)
-    print(f"Initiated stack deletion for {stack_name}.")
-    if debug: print(f"delete_stack response: {response}")
-
-    stack_delete_waiter = cfn_client.get_waiter('stack_delete_complete')
-    print(f"Waiting on deletion of {stack_name}...")
-    try:
-        stack_delete_waiter.wait(StackName=stack_name)
-        print(f"Successfully deleted stack {stack_name}.")
-    except Exception as e:
-        print(f"{type(e).__name__}: {e}")
-        cfn_stack = cfn_client.describe_stack_resources(StackName=stack_name)
-        stack_resources = cfn_stack["StackResources"]
-        failed_resources = []
-        for resource in stack_resources:
-            if resource["ResourceStatus"] != "DELETE_COMPLETE":
-                failed_resources.append(resource)
-        print(f"{json.dumps(failed_resources, indent=4, sort_keys=True, default=str)}")
-
-    if api_data is not None:
-        api_id = api_data["id"]
-        log_group = f"API-Gateway-Execution-Logs_{api_id}/Prod"
-        response = log_client.delete_log_group(logGroupName=log_group)
-        if debug: print(f"Deleted log group: {log_group}, response: {response}")
-
-
-def deploy_sam_resources(debug=False):
-    zip_files = zip_lambda_resources()
-
-    print("Deploying SAM resources.")
-    deploy_cmd = f"sam deploy --template-file sam_templates/stunning_disco_template.yml --resolve-s3 " \
-                 f"--stack-name {stack_name} --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND " \
-                 f"--no-fail-on-empty-changeset".split(' ')
-    result = subprocess.run(deploy_cmd, capture_output=True)
-    if debug:
-        print(result.stdout.decode("utf-8"))
-    if result.returncode != 0:
-        print(result.stderr.decode("utf-8"))
-        delete_lambda_zips(zip_files)
-        raise RuntimeError("Unsuccessful SAM deployment.")
-    else:
-        print("SAM deploy successful.")
-
-    delete_lambda_zips(zip_files)
-
-
 if __name__ == "__main__":
     start = datetime.datetime.now()
     args = arguments()
 
     # Order kind of matters here -- if we're gonna delete we want it to be first
     if args.delete:
-        delete_cfn_resources(args.debug)
         delete_lambda_layers(args.debug)
     if args.web or args.all:
         deploy_web_resource(args.debug)
-    if args.sam or args.layers or args.all:
+    if args.layers or args.all:
         deploy_lambda_layers(args.debug)
-    if args.sam or args.all:
-        deploy_sam_resources(args.debug)
     elif args.lambdas or args.all:
         deploy_lambda_resources(args.debug)
     if args.clean:
         cleanup()
     if args.build:
-        zip_lambda_resources(args.debug)
-    if args.api or args.sam or args.all:
-        deploy_gateway_stage(args.debug)
+        build_lambda_resources(args.debug)
 
     print(f"Script finished in {datetime.datetime.now() - start}")

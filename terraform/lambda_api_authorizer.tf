@@ -1,6 +1,8 @@
 resource "aws_lambda_function" "api_authorizer_lambda" {
   function_name = "api_authorizer_lambda"
-  filename = "../api_authorizer_lambda.zip"
+  s3_bucket = var.lambda_layers_bucket
+  s3_key = "api_authorizer_lambda.zip"
+  source_code_hash = filebase64sha256("../build/api_authorizer_lambda.zip")
   handler = "api_authorizer_lambda.lambda_handler"
   runtime = "python3.8"
   role = aws_iam_role.api_authorizer_lambda_role.arn

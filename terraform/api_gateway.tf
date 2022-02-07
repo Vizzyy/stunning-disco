@@ -62,6 +62,7 @@ resource "aws_api_gateway_domain_name" "api_gateway_domain_name" {
 
   mutual_tls_authentication {
     truststore_uri = var.trustStoreUri
+    truststore_version = var.trustStoreVersion
   }
   endpoint_configuration {
     types = ["REGIONAL"]

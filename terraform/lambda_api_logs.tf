@@ -1,6 +1,8 @@
 resource "aws_lambda_function" "api_logs_lambda" {
   function_name = "api_logs_lambda"
-  filename = "../api_logs_lambda.zip"
+  s3_bucket = var.lambda_layers_bucket
+  s3_key = "api_logs_lambda.zip"
+  source_code_hash = filebase64sha256("../build/api_logs_lambda.zip")
   handler = "api_logs_lambda.lambda_handler"
   runtime = "python3.8"
   role = aws_iam_role.api_logs_lambda_role.arn

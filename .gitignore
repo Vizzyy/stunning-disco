@@ -9,3 +9,5 @@ scripts/upload_web_src.sh
 *.tfvars
 *.tfstate*
 *.terraform/
+/scripts/
+/build/

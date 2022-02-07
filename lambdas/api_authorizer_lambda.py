@@ -28,7 +28,7 @@ def lambda_handler(event=None, context=None):
         'Body': None
     }
 
-    if cn != "lambda" and "/static" not in path and "/status" not in path and path != "/":
+    if cn != "service2021" and "/static" not in path and "/status" not in path and path != "/":
         if "queryStringParameters" in event.keys():
             stored_object["QueryParams"] = event["queryStringParameters"]
 
