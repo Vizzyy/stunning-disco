@@ -1,8 +1,13 @@
+data "archive_file" "api_authorizer_lambda_zip" {
+  type = "zip"
+  source_file = "../lambdas/api_authorizer_lambda.py"
+  output_path = "../build/api_authorizer_lambda.zip"
+}
+
 resource "aws_lambda_function" "api_authorizer_lambda" {
   function_name = "api_authorizer_lambda"
-  s3_bucket = var.lambda_layers_bucket
-  s3_key = "api_authorizer_lambda.zip"
-  source_code_hash = filebase64sha256("../build/api_authorizer_lambda.zip")
+  filename = data.archive_file.api_authorizer_lambda_zip.output_path
+  source_code_hash = data.archive_file.api_authorizer_lambda_zip.output_base64sha256
   handler = "api_authorizer_lambda.lambda_handler"
   runtime = "python3.8"
   role = aws_iam_role.api_authorizer_lambda_role.arn

@@ -11,3 +11,4 @@ scripts/upload_web_src.sh
 *.terraform/
 /scripts/
 /build/
+/terraform/.terraform.lock.hcl

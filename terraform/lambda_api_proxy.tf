@@ -1,12 +1,17 @@
+data "archive_file" "api_proxy_lambda_zip" {
+  type = "zip"
+  source_file = "../lambdas/api_proxy_lambda.py"
+  output_path = "../build/api_proxy_lambda.zip"
+}
+
 resource "aws_lambda_function" "api_proxy_lambda" {
   depends_on = [
     aws_lambda_layer_version.lambda_layer_sqs,
     aws_lambda_layer_version.lambda_layer_ssm
   ]
   function_name = "api_proxy_lambda"
-  s3_bucket = var.lambda_layers_bucket
-  s3_key = "api_proxy_lambda.zip"
-  source_code_hash = filebase64sha256("../build/api_proxy_lambda.zip")
+  filename = data.archive_file.api_proxy_lambda_zip.output_path
+  source_code_hash = data.archive_file.api_proxy_lambda_zip.output_base64sha256
   handler = "api_proxy_lambda.lambda_handler"
   runtime = "python3.8"
   role = aws_iam_role.api_proxy_lambda_role.arn
