@@ -141,7 +141,7 @@ def delete_lambda_zips(lambda_zips):
 
 
 def cleanup():
-    zip_files = glob.glob(f'*.zip')
+    zip_files = glob.glob(f'{project_root}/build/*.zip')
     delete_lambda_zips(zip_files)
     print("Cleaned up.")
 
