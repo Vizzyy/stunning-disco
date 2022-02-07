@@ -51,8 +51,8 @@ pipeline {
                     cd terraform;
                     cp ~/stunning-disco.tfvars ./terraform.tfvars;
                     tfswitch;
-                    terraform init;
-                    terraform apply --auto-approve;
+                    /var/lib/jenkins/bin/terraform init;
+                    /var/lib/jenkins/bin/terraform apply --auto-approve;
                     """)
                 }
             }
