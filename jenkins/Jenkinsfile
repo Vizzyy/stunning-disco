@@ -26,19 +26,6 @@ pipeline {
             }
         }
 
-        stage("Build") {
-            when {
-                expression {
-                    return env.Build == "true"
-                }
-            }
-            steps {
-                script {
-                    sh("python3 deploy -o -c -b")
-                }
-            }
-        }
-
         stage("Terraform") {
             when {
                 expression {
