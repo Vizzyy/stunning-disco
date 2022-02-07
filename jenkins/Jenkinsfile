@@ -49,7 +49,7 @@ pipeline {
                 script {
                     sh("""
                     cd terraform;
-                    cp ~/$serviceName.tfvars ./terraform.tfvars;
+                    cp ~/stunning-disco.tfvars ./terraform.tfvars;
                     tfswitch;
                     terraform init;
                     terraform apply --auto-approve;
