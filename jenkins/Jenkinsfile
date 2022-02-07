@@ -34,7 +34,7 @@ pipeline {
             }
             steps {
                 script {
-                    sh("python3 deploy.py -o -b")
+                    sh("python3 deploy -o -b")
                 }
             }
         }
